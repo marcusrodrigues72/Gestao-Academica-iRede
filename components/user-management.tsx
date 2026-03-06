@@ -115,10 +115,12 @@ export function UserManagement() {
     setIsModalOpen(true);
   };
 
-  const filteredUsers = users.filter(user => 
-    user.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    const nome = user.nome || '';
+    const email = user.email || '';
+    return nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           email.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   const roleColors: any = {
     administrador: 'bg-indigo-50 text-indigo-600 border-indigo-100',

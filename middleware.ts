@@ -28,6 +28,29 @@ export async function middleware(request: NextRequest) {
     const role = payload.role as string;
     const path = request.nextUrl.pathname;
 
+    // Define access rules
+    const rules: Record<string, string[]> = {
+      '/': ['administrador', 'gestor'],
+      '/alunos': ['administrador', 'gestor'],
+      '/cursos': ['administrador', 'gestor'],
+      '/matriculas': ['administrador', 'gestor'],
+      '/importacao': ['administrador', 'gestor'],
+      '/relatorios': ['administrador', 'gestor'],
+      '/configuracoes': ['administrador', 'gestor'],
+      '/lancamento-notas': ['administrador', 'gestor', 'professor', 'mentor'],
+    };
+
+    // Check if the current path starts with any restricted path
+    const restrictedPath = Object.keys(rules).find(p => path === p || (p !== '/' && path.startsWith(p)));
+    
+    if (restrictedPath) {
+      const allowedRoles = rules[restrictedPath];
+      if (!allowedRoles.includes(role)) {
+        // Redirect to the only page they have access to
+        return NextResponse.redirect(new URL('/lancamento-notas', request.url));
+      }
+    }
+
     return NextResponse.next();
   } catch (error) {
     if (isLoginPage) return NextResponse.next();

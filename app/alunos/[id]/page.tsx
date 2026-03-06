@@ -259,7 +259,13 @@ export default function StudentProfilePage() {
                       { label: 'CPF', value: student.cpf || 'Não informado', icon: CreditCard },
                       { label: 'RG', value: student.rg || 'Não informado', icon: FileText },
                       { label: 'Nascimento', value: student.birthDate || 'Não informado', icon: Calendar },
-                      { label: 'Endereço', value: student.address || 'Não informado', icon: MapPin },
+                      { 
+                        label: 'Endereço', 
+                        value: student.street 
+                          ? `${student.street}${student.number ? `, ${student.number}` : ''}${student.neighborhood ? ` - ${student.neighborhood}` : ''}${student.city ? ` - ${student.city}` : ''}${student.state ? `/${student.state}` : ''}${student.cep ? ` (CEP: ${student.cep})` : ''}${student.complement ? ` [${student.complement}]` : ''}`
+                          : student.address || 'Não informado', 
+                        icon: MapPin 
+                      },
                     ].map((item) => (
                       <div key={item.label} className="flex gap-4">
                         <div className="p-2 bg-slate-50 rounded-lg shrink-0">

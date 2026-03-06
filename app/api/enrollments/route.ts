@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
+import { getSession } from '@/lib/auth';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -75,6 +76,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const session = await getSession();
+  if (!session || (session.role !== 'administrador' && session.role !== 'gestor')) {
+    return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+  }
+
   const data = await request.json();
   
   const matriculaId = uuidv4();

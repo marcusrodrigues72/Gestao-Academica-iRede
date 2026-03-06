@@ -33,14 +33,19 @@ export default function LoginPage() {
       console.log('Login response status:', response.status);
 
       if (response.ok) {
+        const data = await response.json();
         console.log('Login successful, setting up session...');
-        // Use router for faster client-side navigation
+        
+        // Determine landing page based on role
+        const role = data.user?.role;
+        const landingPage = (role === 'professor' || role === 'mentor') ? '/lancamento-notas' : '/';
+        
         try {
-          router.push('/');
+          router.push(landingPage);
           router.refresh();
         } catch (navError) {
           console.error('Navigation error:', navError);
-          window.location.href = '/';
+          window.location.href = landingPage;
         }
       } else {
         const data = await response.json();

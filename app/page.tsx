@@ -86,7 +86,7 @@ export default function DashboardPage() {
     { label: 'Total de Alunos', value: data?.stats?.totalStudents || 0, trend: '+12%', icon: Users, color: 'bg-blue-500' },
     { label: 'Cursos em Andamento', value: data?.stats?.activeEnrollments || 0, trend: 'Ativos', icon: BookOpen, color: 'bg-indigo-500' },
     { label: 'Taxa de Retenção', value: '87.4%', trend: 'Meta: 85%', icon: TrendingUp, color: 'bg-emerald-500' },
-    { label: 'Desempenho Médio', value: data?.stats?.avgGrade ? (data.stats.avgGrade).toFixed(1) : '0.0', trend: '+0.4', icon: Star, color: 'bg-amber-500' },
+    { label: 'Desempenho Médio', value: (data?.stats?.avgGrade !== null && data?.stats?.avgGrade !== undefined) ? Number(data.stats.avgGrade).toFixed(1) : '0.0', trend: '+0.4', icon: Star, color: 'bg-amber-500' },
   ];
 
   // Map region data calculation
@@ -371,16 +371,16 @@ export default function DashboardPage() {
                           <span className="text-sm font-black text-slate-900">{alert.name}</span>
                           <span className={cn(
                             "text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-widest",
-                            alert.grade < 5 ? "bg-rose-50 text-rose-600 border-rose-100" : "bg-amber-50 text-amber-600 border-amber-100"
+                            (alert.grade !== null && alert.grade < 5) ? "bg-rose-50 text-rose-600 border-rose-100" : "bg-amber-50 text-amber-600 border-amber-100"
                           )}>
-                            {alert.grade < 5 ? `Nota: ${alert.grade.toFixed(1)}` : `Freq: ${alert.frequency}%`}
+                            {(alert.grade !== null && alert.grade < 5) ? `Nota: ${Number(alert.grade).toFixed(1)}` : `Freq: ${alert.frequency || 0}%`}
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-500 font-medium mb-4">{alert.course}</p>
                         <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                           <div 
-                            className={cn("h-full transition-all duration-1000", alert.grade < 5 ? "bg-rose-500" : "bg-amber-500")} 
-                            style={{ width: `${alert.grade < 5 ? (alert.grade/10)*100 : alert.frequency}%` }} 
+                            className={cn("h-full transition-all duration-1000", (alert.grade !== null && alert.grade < 5) ? "bg-rose-500" : "bg-amber-500")} 
+                            style={{ width: `${(alert.grade !== null && alert.grade < 5) ? (alert.grade/10)*100 : (alert.frequency || 0)}%` }} 
                           />
                         </div>
                       </div>

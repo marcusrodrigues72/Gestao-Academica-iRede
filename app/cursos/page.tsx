@@ -74,10 +74,12 @@ export default function CoursesPage() {
     }
   };
 
-  const filteredCourses = courses.filter(c => 
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredCourses = courses.filter(c => {
+    const name = c.name || '';
+    const category = c.category || '';
+    return name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           category.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   if (loading) {
     return (

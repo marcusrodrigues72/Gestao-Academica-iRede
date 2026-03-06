@@ -75,20 +75,20 @@ export async function PUT(
   try {
     db.prepare(`
       UPDATE matricula SET 
-        status_matricula = ?,
-        classificacao = ?,
-        situacao_final = ?,
-        frequencia_final = ?,
-        nota_final = ?,
-        progresso_percentual = ?
+        status_matricula = COALESCE(?, status_matricula),
+        classificacao = COALESCE(?, classificacao),
+        situacao_final = COALESCE(?, situacao_final),
+        frequencia_final = COALESCE(?, frequencia_final),
+        nota_final = COALESCE(?, nota_final),
+        progresso_percentual = COALESCE(?, progresso_percentual)
       WHERE matricula_id = ?
     `).run(
       data.status ?? null,
       data.classification ?? null,
       data.finalSituation ?? null,
-      data.frequency ?? 0,
-      data.grade ?? 0,
-      data.progress ?? 0,
+      data.frequency ?? null,
+      data.grade ?? null,
+      data.progress ?? null,
       id
     );
 

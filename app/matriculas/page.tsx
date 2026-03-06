@@ -217,7 +217,7 @@ export default function EnrollmentsPage() {
                           <td className="px-6 py-5">
                             <div className="flex flex-col">
                               <span className="text-sm font-black text-slate-900">{enrollment.studentName}</span>
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ID: {enrollment.studentExternalId || enrollment.studentId.slice(0, 5)}</span>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ID: {enrollment.studentExternalId || (enrollment.studentId ? enrollment.studentId.slice(0, 5) : 'N/A')}</span>
                             </div>
                           </td>
                           <td className="px-6 py-5">

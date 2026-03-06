@@ -39,7 +39,7 @@ interface Student {
 
 const initialStudents: Student[] = [
   { id: 'ST-8821', name: 'Alex Johnson', cpf: '123.456.789-00', email: 'alex.j@example.com', course: 'Digital Marketing', progress: 65, status: 'Ativo', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBFw7C12upUllg6DeLoee2aTfkNniT8jWiy1yhaGRQt_eX0HfoHlLUxkwJjM4LEIjIy1Zt0dEWShI_xcbD0apvs5grfV3Un3Rx3SIbSF4a1xk_Rb4G4vmgaJmNQ2DLM-_nGf_mKe3hlDDo4aWx7LHqsxj0CIVopnVcsFTGmaqK5ErI7NqEZSdPtxBhSX9tkYWDudzGu_631I4cuG-G_6WmGrv5jyrRJ0Hih3I643l1Vj5-U2cfGuwtWDWku_qv35M3mhLIBh0VoTuM', enrollmentCount: 1 },
-  { id: 'ST-9012', name: 'Maria Garcia', cpf: '234.567.890-11', email: 'm.garcia@univ.edu', course: 'Data Science', progress: 85, status: 'On Hold', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuClUy6zgorEGMpOtZ4z5W3GjN_lPsK1KkbMO8CfHg0U2fOSJ3TFB3Wq176F1vL_cRM--d-ZM5-LCp8g39svbN6P3km1b7hCeL2_WDS5VVVjuW_sWHV5qBx3ko8ubgJpPNfbRG0gttsImb11T4eRiHcmerb8P9JKMLB7Ga9o_RxclJJCHVSWyWAWHfqRy_DdCdXvUEW5SdYx50wj7VuyDlVM-nuZPaG9TI6tysC-X8qggPZ_qXpLsjnk-vaPdQECqE8YQLqr-C8JcQ4', enrollmentCount: 1 },
+  { id: 'ST-9012', name: 'Maria Garcia', cpf: '234.567.890-11', email: 'm.garcia@univ.edu', course: 'Data Science', progress: 85, status: 'Em Espera', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuClUy6zgorEGMpOtZ4z5W3GjN_lPsK1KkbMO8CfHg0U2fOSJ3TFB3Wq176F1vL_cRM--d-ZM5-LCp8g39svbN6P3km1b7hCeL2_WDS5VVVjuW_sWHV5qBx3ko8ubgJpPNfbRG0gttsImb11T4eRiHcmerb8P9JKMLB7Ga9o_RxclJJCHVSWyWAWHfqRy_DdCdXvUEW5SdYx50wj7VuyDlVM-nuZPaG9TI6tysC-X8qggPZ_qXpLsjnk-vaPdQECqE8YQLqr-C8JcQ4', enrollmentCount: 1 },
   { id: 'ST-7734', name: 'James Smith', cpf: '345.678.901-22', email: 'jsmith@domain.com', course: 'UX Masterclass', progress: 92, status: 'Ativo', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuARziGcsPEt_r07OLwZcKF9DIsTB4jgfPC9ocBf0y3KDlV0BicDGzDnreSnSCPNeTSVu8RGdKo5feMUoQy_BmWz3tt1RoTpkn4evC2LKABQcI2TPH6Yfdji1ig6D6N8cKx8FWRFnT2cv5va92rny7zvdatKW7y0smxkqJuhFK2u3EWVAhzTymjd82iMnKq9hK35QkST8ZcRFhkQjFxXbf02uULAfrnZ8EHFSOBP8sjNvVQFQWPDZRznWAz2YZD1CgDBQYR7YNF7iwc', enrollmentCount: 1 },
   { id: 'ST-8109', name: 'Sarah Chen', cpf: '456.789.012-33', email: 'schen@global.net', course: 'Python Basics', progress: 10, status: 'Inativo', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA43NQHFo7C1jPDxn80g4shGmLrhtuw7OrMDIP5rUlQeHrdPOyWu037hnpz_NTd-NwkRYIxJcEDFddy6YvzDt8_BBQQ1XxDfVV0iF_uWgdGfUak3PYyaZYRkz1E3kWdopOA6N3uvVBdhBssAxwUMC_hKHoWURqkSZUEWeaC7aMZpmdGEAP9CSH_jd2cR0GVaFfCfAZMnahKI4q6zjETGJyegTXxPMKYipIQfdZqIxe8xHieRbaJzJvQezbEeDyBFpWv5eyZbWpgMw4', enrollmentCount: 1 },
 ];
@@ -88,9 +88,13 @@ export default function StudentsPage() {
   }, [fetchStudents]);
 
   const filteredStudents = studentsList.filter(s => {
-    const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         s.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         s.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const name = s.name || '';
+    const email = s.email || '';
+    const id = s.id || '';
+    
+    const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         id.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'Todos' || s.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -159,21 +163,21 @@ export default function StudentsPage() {
               {/* Header Actions */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-slate-900 text-2xl font-black tracking-tight">Student Directory</h1>
+                  <h1 className="text-slate-900 text-2xl font-black tracking-tight">Diretório de Alunos</h1>
                   <p className="text-slate-500 text-sm">Gerenciamento centralizado de matrículas e perfis</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="hidden md:flex items-center bg-white border border-slate-200 rounded-xl px-4 py-1.5 shadow-sm">
-                    <span className="text-[10px] font-black text-slate-400 mr-3 uppercase tracking-widest">Bulk Actions:</span>
-                    <button className="text-xs font-bold text-slate-600 hover:text-primary px-2 border-r border-slate-200">Export PDF</button>
-                    <button className="text-xs font-bold text-slate-600 hover:text-primary px-2">Message</button>
+                    <span className="text-[10px] font-black text-slate-400 mr-3 uppercase tracking-widest">Ações em Massa:</span>
+                    <button className="text-xs font-bold text-slate-600 hover:text-primary px-2 border-r border-slate-200">Exportar PDF</button>
+                    <button className="text-xs font-bold text-slate-600 hover:text-primary px-2">Mensagem</button>
                   </div>
                   <button 
                     onClick={() => router.push('/alunos/novo')}
                     className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 transition-all flex items-center gap-2 active:scale-95"
                   >
                     <Plus className="w-4 h-4" />
-                    Add Student
+                    Adicionar Aluno
                   </button>
                 </div>
               </div>
@@ -184,7 +188,7 @@ export default function StudentsPage() {
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input 
                     type="text" 
-                    placeholder="Search by name, ID or email..." 
+                    placeholder="Buscar por nome, ID ou e-mail..." 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/20 transition-all"
@@ -196,13 +200,13 @@ export default function StudentsPage() {
                     onChange={(e) => setStatusFilter(e.target.value)}
                     className="text-sm border-slate-200 rounded-xl bg-white focus:ring-primary/20 py-2.5 pl-4 pr-10 font-bold text-slate-600"
                   >
-                    <option value="Todos">Status: All</option>
-                    <option value="Ativo">Active</option>
-                    <option value="On Hold">On Hold</option>
-                    <option value="Inativo">Inactive</option>
+                    <option value="Todos">Status: Todos</option>
+                    <option value="Ativo">Ativo</option>
+                    <option value="Em Espera">Em Espera</option>
+                    <option value="Inativo">Inativo</option>
                   </select>
                   <select className="text-sm border-slate-200 rounded-xl bg-white focus:ring-primary/20 py-2.5 pl-4 pr-10 font-bold text-slate-600">
-                    <option>Course: All</option>
+                    <option>Curso: Todos</option>
                   </select>
                   <button className="p-2.5 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200">
                     <Filter className="w-5 h-5" />
@@ -219,11 +223,11 @@ export default function StudentsPage() {
                         <th className="w-14 px-4 py-4 text-center">
                           <input type="checkbox" className="rounded border-slate-700 bg-slate-800 text-primary focus:ring-offset-slate-900" />
                         </th>
-                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-r border-slate-800/50">Student Profile</th>
-                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-r border-slate-800/50">Contact Info</th>
-                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-r border-slate-800/50">Enrollment</th>
+                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-r border-slate-800/50">Perfil do Aluno</th>
+                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-r border-slate-800/50">Informações de Contato</th>
+                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-r border-slate-800/50">Matrícula</th>
                         <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-r border-slate-800/50">Status</th>
-                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Actions</th>
+                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Ações</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -262,7 +266,7 @@ export default function StudentsPage() {
                             <td className="px-4 py-4">
                               <div className="flex flex-col">
                                 <span className="text-xs font-medium text-slate-600">{student.email}</span>
-                                <span className="text-[10px] text-slate-400 mt-0.5 uppercase font-bold tracking-tighter">Personal Account</span>
+                                <span className="text-[10px] text-slate-400 mt-0.5 uppercase font-bold tracking-tighter">Conta Pessoal</span>
                               </div>
                             </td>
                             <td className="px-4 py-4">
@@ -291,10 +295,10 @@ export default function StudentsPage() {
                               <span className={cn(
                                 "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
                                 student.status === 'Ativo' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                                student.status === 'On Hold' ? "bg-amber-50 text-amber-600 border-amber-100" :
+                                student.status === 'Em Espera' ? "bg-amber-50 text-amber-600 border-amber-100" :
                                 "bg-slate-50 text-slate-400 border-slate-100"
                               )}>
-                                {student.status === 'Ativo' ? 'Active' : student.status}
+                                {student.status}
                               </span>
                             </td>
                             <td className="px-4 py-4 text-right" onClick={(e) => e.stopPropagation()}>
@@ -339,20 +343,20 @@ export default function StudentsPage() {
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1.5">
                       <div className="size-2 rounded-full bg-emerald-500" />
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Ativo</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="size-2 rounded-full bg-amber-500" />
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">On Hold</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Em Espera</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="size-2 rounded-full bg-slate-300" />
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Inactive</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Inativo</span>
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-4">
-                    <span className="text-xs text-slate-500 font-bold uppercase tracking-tighter">Page 1 of 1</span>
+                    <span className="text-xs text-slate-500 font-bold uppercase tracking-tighter">Página 1 de 1</span>
                     <div className="flex items-center gap-1">
                       <button className="h-8 w-8 flex items-center justify-center border border-slate-200 rounded-lg bg-white text-slate-400 disabled:opacity-50 hover:bg-slate-50 transition-colors" disabled>
                         <ChevronLeft className="w-4 h-4" />
@@ -388,12 +392,12 @@ export default function StudentsPage() {
                         <span className="absolute bottom-1 right-1 size-4 bg-emerald-500 border-2 border-white rounded-full shadow-sm"></span>
                       </div>
                       <h3 className="text-xl font-black text-slate-900 tracking-tight">{selectedStudent.name}</h3>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Professional Certificate Student</p>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Aluno de Certificado Profissional</p>
                       
                       <div className="flex items-center gap-2 mt-6 w-full">
                         <button className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-primary text-white rounded-xl text-xs font-bold hover:brightness-110 transition-all shadow-md shadow-primary/20">
                           <Mail className="w-4 h-4" />
-                          Email
+                          E-mail
                         </button>
                         <button className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-[#25D366] text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all shadow-md shadow-green-500/20">
                           <MessageSquare className="w-4 h-4" />
@@ -433,8 +437,8 @@ export default function StudentsPage() {
 
                     <div className="py-8">
                       <div className="flex items-center justify-between mb-6">
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Last 3 Activities</h4>
-                        <button className="text-[10px] font-black text-primary hover:underline uppercase tracking-widest">View All</button>
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Últimas 3 Atividades</h4>
+                        <button className="text-[10px] font-black text-primary hover:underline uppercase tracking-widest">Ver Tudo</button>
                       </div>
                       <div className="space-y-5">
                         <div className="flex gap-4">
@@ -442,8 +446,8 @@ export default function StudentsPage() {
                             <FileText className="w-4 h-4" />
                           </div>
                           <div>
-                            <p className="text-[11px] font-bold text-slate-800 leading-tight">Submitted Module 4 Quiz</p>
-                            <p className="text-[10px] text-slate-400 mt-1 font-medium">2 hours ago</p>
+                            <p className="text-[11px] font-bold text-slate-800 leading-tight">Enviou Quiz do Módulo 4</p>
+                            <p className="text-[10px] text-slate-400 mt-1 font-medium">há 2 horas</p>
                           </div>
                         </div>
                         <div className="flex gap-4">
@@ -451,8 +455,8 @@ export default function StudentsPage() {
                             <MessageSquare className="w-4 h-4" />
                           </div>
                           <div>
-                            <p className="text-[11px] font-bold text-slate-800 leading-tight">Posted in Discussion Board</p>
-                            <p className="text-[10px] text-slate-400 mt-1 font-medium">Yesterday, 4:15 PM</p>
+                            <p className="text-[11px] font-bold text-slate-800 leading-tight">Postou no Fórum de Discussão</p>
+                            <p className="text-[10px] text-slate-400 mt-1 font-medium">Ontem, 16:15</p>
                           </div>
                         </div>
                         <div className="flex gap-4">
@@ -460,8 +464,8 @@ export default function StudentsPage() {
                             <Plus className="w-4 h-4" />
                           </div>
                           <div>
-                            <p className="text-[11px] font-bold text-slate-800 leading-tight">Completed Lesson: SEO Intro</p>
-                            <p className="text-[10px] text-slate-400 mt-1 font-medium">Nov 12, 10:30 AM</p>
+                            <p className="text-[11px] font-bold text-slate-800 leading-tight">Concluiu Lição: Intro SEO</p>
+                            <p className="text-[10px] text-slate-400 mt-1 font-medium">12 Nov, 10:30</p>
                           </div>
                         </div>
                       </div>
@@ -472,7 +476,7 @@ export default function StudentsPage() {
                       onClick={() => router.push(`/alunos/${selectedStudent.id}`)}
                       className="w-full py-3 bg-white border-2 border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
                     >
-                      View Full Profile
+                      Ver Perfil Completo
                     </button>
                   </div>
                 </motion.div>

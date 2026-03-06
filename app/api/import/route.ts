@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
+import { getSession } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
+    const session = await getSession();
+    if (!session || (session.role !== 'administrador' && session.role !== 'gestor')) {
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+    }
+
     const data = await request.json();
     const { type, rows, mapping } = data;
 

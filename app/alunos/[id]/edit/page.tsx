@@ -342,13 +342,69 @@ export default function EditStudentPage() {
                       />
                     </div>
                     <div className="lg:col-span-2 space-y-2">
-                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Endereço Completo</label>
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Logradouro (Rua/Av)</label>
                       <input 
-                        name="address"
-                        value={formData.address || ''}
+                        name="street"
+                        value={formData.street || ''}
                         onChange={handleChange}
                         className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all" 
-                        placeholder="Rua, Número, Bairro, Cidade, UF" 
+                        placeholder="Ex: Rua das Flores" 
+                        type="text"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Número</label>
+                      <input 
+                        name="number"
+                        value={formData.number || ''}
+                        onChange={handleChange}
+                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all" 
+                        placeholder="123" 
+                        type="text"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Bairro</label>
+                      <input 
+                        name="neighborhood"
+                        value={formData.neighborhood || ''}
+                        onChange={handleChange}
+                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all" 
+                        placeholder="Bairro" 
+                        type="text"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Cidade</label>
+                      <input 
+                        name="city"
+                        value={formData.city || ''}
+                        onChange={handleChange}
+                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all" 
+                        placeholder="Cidade" 
+                        type="text"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Estado (UF)</label>
+                      <input 
+                        name="state"
+                        value={formData.state || ''}
+                        onChange={handleChange}
+                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all" 
+                        placeholder="UF" 
+                        type="text"
+                        maxLength={2}
+                      />
+                    </div>
+                    <div className="lg:col-span-2 space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Complemento</label>
+                      <input 
+                        name="complement"
+                        value={formData.complement || ''}
+                        onChange={handleChange}
+                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all" 
+                        placeholder="Apto, Bloco, etc." 
                         type="text"
                       />
                     </div>

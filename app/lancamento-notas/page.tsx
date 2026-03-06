@@ -37,7 +37,7 @@ export default function LancamentoNotasPage() {
     }
   };
 
-  const fetchData = async () => {
+  const fetchData = React.useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -53,7 +53,7 @@ export default function LancamentoNotasPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCourse, selectedCycle, selectedTurma]);
 
   React.useEffect(() => {
     fetchFilters();
@@ -61,7 +61,7 @@ export default function LancamentoNotasPage() {
 
   React.useEffect(() => {
     fetchData();
-  }, [selectedCourse, selectedCycle, selectedTurma]);
+  }, [fetchData]);
 
   const handleUpdate = async (matriculaId: string, data: any) => {
     setSaving(matriculaId);
@@ -231,12 +231,12 @@ function StudentRow({ student, onSave, isSaving }: { student: any, onSave: (data
   const [initialModules, setInitialModules] = React.useState<any[]>([]);
   const [loadingModules, setLoadingModules] = React.useState(false);
   const [data, setData] = React.useState({
-    nota_final: student.grade || 0,
-    frequencia_final: student.frequency || 0,
-    progresso_percentual: student.progress || 0
+    grade: student.grade || 0,
+    frequency: student.frequency || 0,
+    progress: student.progress || 0
   });
 
-  const fetchModules = async () => {
+  const fetchModules = React.useCallback(async () => {
     if (modules.length > 0) return;
     setLoadingModules(true);
     try {
@@ -250,11 +250,11 @@ function StudentRow({ student, onSave, isSaving }: { student: any, onSave: (data
     } finally {
       setLoadingModules(false);
     }
-  };
+  }, [modules.length, student.id]);
 
   React.useEffect(() => {
     if (expanded) fetchModules();
-  }, [expanded]);
+  }, [expanded, fetchModules]);
 
   const handleModuleChange = (moduleId: string, field: string, value: number) => {
     setModules(prev => prev.map(m => m.id === moduleId ? { ...m, [field]: value } : m));
@@ -263,7 +263,7 @@ function StudentRow({ student, onSave, isSaving }: { student: any, onSave: (data
   const hasChanges = modules.some(m => {
     const original = initialModules.find((om: any) => om.id === m.id);
     return m.grade !== (original?.grade || 0) || m.frequency !== (original?.frequency || 0);
-  }) || data.nota_final !== (student.grade || 0) || data.frequencia_final !== (student.frequency || 0);
+  }) || data.grade !== (student.grade || 0) || data.frequency !== (student.frequency || 0);
 
   const handleSave = () => {
     onSave({
@@ -299,13 +299,13 @@ function StudentRow({ student, onSave, isSaving }: { student: any, onSave: (data
         </td>
         <td className="px-6 py-4">
           <div className="text-sm font-bold text-slate-900">
-            {student.grade !== null ? student.grade.toFixed(1) : '-'}
+            {(student.grade !== null && student.grade !== undefined) ? Number(student.grade).toFixed(1) : '-'}
           </div>
           <div className="text-[10px] text-slate-400 font-medium">Média Automática</div>
         </td>
         <td className="px-6 py-4">
           <div className="text-sm font-bold text-slate-900">
-            {student.frequency !== null ? student.frequency.toFixed(0) : '-'}%
+            {(student.frequency !== null && student.frequency !== undefined) ? Number(student.frequency).toFixed(0) : '-'}%
           </div>
           <div className="text-[10px] text-slate-400 font-medium">Média Automática</div>
         </td>

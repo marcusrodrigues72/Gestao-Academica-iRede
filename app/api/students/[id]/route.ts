@@ -26,7 +26,13 @@ export async function GET(
       (SELECT valor FROM contato_aluno WHERE aluno_id = a.aluno_id AND tipo = 'whatsapp' LIMIT 1) as whatsapp,
       (SELECT valor FROM contato_aluno WHERE aluno_id = a.aluno_id AND tipo = 'telefone' LIMIT 1) as phone,
       e.cep,
+      e.logradouro as street,
       e.logradouro as address,
+      e.numero as number,
+      e.bairro as neighborhood,
+      e.cidade as city,
+      e.estado as state,
+      e.complemento as complement,
       f.curso as originCourse,
       f.instituicao as institution,
       f.status_curso as academicStatus,
@@ -139,12 +145,43 @@ export async function PUT(
     }
 
     // Update Endereço
-    if (updates.cep || updates.address) {
+    if (updates.cep || updates.address || updates.street || updates.number || updates.neighborhood || updates.city || updates.state) {
       const exists = db.prepare("SELECT 1 FROM endereco_aluno WHERE aluno_id = ?").get(id);
       if (exists) {
-        db.prepare("UPDATE endereco_aluno SET cep = COALESCE(?, cep), logradouro = COALESCE(?, logradouro) WHERE aluno_id = ?").run(updates.cep || null, updates.address || null, id);
+        db.prepare(`
+          UPDATE endereco_aluno SET 
+            cep = COALESCE(?, cep), 
+            logradouro = COALESCE(?, logradouro),
+            numero = COALESCE(?, numero),
+            bairro = COALESCE(?, bairro),
+            cidade = COALESCE(?, cidade),
+            estado = COALESCE(?, estado),
+            complemento = COALESCE(?, complemento)
+          WHERE aluno_id = ?
+        `).run(
+          updates.cep || null, 
+          updates.street || updates.address || null, 
+          updates.number || null,
+          updates.neighborhood || null,
+          updates.city || null,
+          updates.state || null,
+          updates.complement || null,
+          id
+        );
       } else {
-        db.prepare("INSERT INTO endereco_aluno (aluno_id, cep, logradouro) VALUES (?, ?, ?)").run(id, updates.cep || null, updates.address || null);
+        db.prepare(`
+          INSERT INTO endereco_aluno (aluno_id, cep, logradouro, numero, bairro, cidade, estado, complemento) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          id, 
+          updates.cep || null, 
+          updates.street || updates.address || null, 
+          updates.number || null,
+          updates.neighborhood || null,
+          updates.city || null,
+          updates.state || null,
+          updates.complement || null
+        );
       }
     }
 

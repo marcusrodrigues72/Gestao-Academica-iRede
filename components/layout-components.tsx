@@ -50,8 +50,8 @@ export function Sidebar() {
   }
 
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Início', href: '/', roles: ['administrador', 'gestor', 'professor', 'mentor'] },
-    { icon: Users, label: 'Alunos', href: '/alunos', roles: ['administrador', 'gestor', 'professor', 'mentor'] },
+    { icon: LayoutDashboard, label: 'Início', href: '/', roles: ['administrador', 'gestor'] },
+    { icon: Users, label: 'Alunos', href: '/alunos', roles: ['administrador', 'gestor'] },
     { icon: ClipboardList, label: 'Lançamento de Notas', href: '/lancamento-notas', roles: ['administrador', 'gestor', 'professor', 'mentor'] },
     { icon: BookOpen, label: 'Cursos', href: '/cursos', roles: ['administrador', 'gestor'] },
     { icon: ClipboardList, label: 'Matrículas', href: '/matriculas', roles: ['administrador', 'gestor'] },

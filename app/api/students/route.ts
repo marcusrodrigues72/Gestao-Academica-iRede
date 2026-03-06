@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
+import { getSession } from '@/lib/auth';
 
 export async function GET() {
+  const session = await getSession();
+  if (!session || (session.role !== 'administrador' && session.role !== 'gestor')) {
+    return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+  }
+
   const students = db.prepare(`
     SELECT 
       a.aluno_id as id, 
@@ -26,6 +32,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const session = await getSession();
+  if (!session || (session.role !== 'administrador' && session.role !== 'gestor')) {
+    return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+  }
+
   const data = await request.json();
   
   if (!data.cpf) {
@@ -116,16 +127,43 @@ export async function POST(request: Request) {
       `).run(alunoId, data.phone);
     }
 
-    // 3. Insert Endereço (Simplified: just one address for now)
-    if (data.cep || data.address) {
+    // 3. Insert Endereço
+    if (data.cep || data.address || data.street || data.number || data.neighborhood || data.city || data.state) {
       const existingAddress = db.prepare('SELECT endereco_id FROM endereco_aluno WHERE aluno_id = ?').get(alunoId);
       if (existingAddress) {
-        db.prepare('UPDATE endereco_aluno SET cep = ?, logradouro = ? WHERE aluno_id = ?').run(
-          data.cep || null, data.address || null, alunoId
+        db.prepare(`
+          UPDATE endereco_aluno SET 
+            cep = ?, 
+            logradouro = ?, 
+            numero = ?, 
+            bairro = ?, 
+            cidade = ?, 
+            estado = ?, 
+            complemento = ? 
+          WHERE aluno_id = ?
+        `).run(
+          data.cep || null, 
+          data.street || data.address || null, 
+          data.number || null, 
+          data.neighborhood || null, 
+          data.city || null, 
+          data.state || null, 
+          data.complement || null, 
+          alunoId
         );
       } else {
-        db.prepare('INSERT INTO endereco_aluno (aluno_id, cep, logradouro) VALUES (?, ?, ?)').run(
-          alunoId, data.cep || null, data.address || null
+        db.prepare(`
+          INSERT INTO endereco_aluno (aluno_id, cep, logradouro, numero, bairro, cidade, estado, complemento) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          alunoId, 
+          data.cep || null, 
+          data.street || data.address || null, 
+          data.number || null, 
+          data.neighborhood || null, 
+          data.city || null, 
+          data.state || null, 
+          data.complement || null
         );
       }
     }

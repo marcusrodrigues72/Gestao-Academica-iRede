@@ -289,16 +289,46 @@ if (alunoCount.count === 0) {
   for (const s of initialStudents) {
     const alunoId = s.id;
     const cpf = `000.000.000-${Math.floor(10 + Math.random() * 89)}`;
+    
+    // 1. Aluno
     insertAluno.run(alunoId, s.name, cpf, s.avatar);
+    
+    // 2. Contato e Endereço (vinculados ao alunoId)
     insertContato.run(alunoId, 'email_principal', s.email, 1);
     insertEndereco.run(alunoId, s.city, s.state);
     
-    const cursoId = uuidv4();
-    insertCurso.run(cursoId, s.course, 'Tecnologia', 'iRede', techMap[s.course] || 'Geral');
+    // 3. Curso (Verificar se já existe para evitar falha de FK na Oferta)
+    const programa = 'Tecnologia';
+    const projeto = 'iRede';
+    const tecnologia = techMap[s.course] || 'Geral';
     
-    const ofertaId = uuidv4();
-    insertOferta.run(ofertaId, cursoId, 'Turma A', '2024.1');
+    let cursoId: string;
+    const existingCurso = db.prepare('SELECT curso_id FROM curso WHERE nome_curso = ? AND programa = ? AND projeto = ? AND tecnologia_objeto = ?')
+      .get(s.course, programa, projeto, tecnologia) as { curso_id: string } | undefined;
     
+    if (existingCurso) {
+      cursoId = existingCurso.curso_id;
+    } else {
+      cursoId = uuidv4();
+      insertCurso.run(cursoId, s.course, programa, projeto, tecnologia);
+    }
+    
+    // 4. Oferta (Verificar se já existe para este curso e turma)
+    const turma = 'Turma A';
+    const ciclo = '2024.1';
+    
+    let ofertaId: string;
+    const existingOferta = db.prepare('SELECT oferta_id FROM oferta_turma WHERE curso_id = ? AND turma = ? AND ciclo_edicao = ?')
+      .get(cursoId, turma, ciclo) as { oferta_id: string } | undefined;
+      
+    if (existingOferta) {
+      ofertaId = existingOferta.oferta_id;
+    } else {
+      ofertaId = uuidv4();
+      insertOferta.run(ofertaId, cursoId, turma, ciclo);
+    }
+    
+    // 5. Matrícula
     const notaFinal = s.progress < 50 ? 4.2 : 8.5;
     const freqFinal = s.progress < 50 ? 65 : 95;
     insertMatricula.run(alunoId, ofertaId, s.status, s.progress, notaFinal, freqFinal);
