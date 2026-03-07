@@ -17,7 +17,9 @@ import {
   Trash2,
   Edit,
   X,
-  UserPlus
+  UserPlus,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
@@ -51,7 +53,12 @@ export default function StudentsPage() {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState('Todos');
   const [selectedStudent, setSelectedStudent] = React.useState<Student | null>(null);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
+  const [isEnrollModalOpen, setIsEnrollModalOpen] = React.useState(false);
+  const [courses, setCourses] = React.useState<any[]>([]);
+  const [selectedCourseForEnroll, setSelectedCourseForEnroll] = React.useState('');
+  const [isEnrolling, setIsEnrolling] = React.useState(false);
   const [studentToDelete, setStudentToDelete] = React.useState<string | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [user, setUser] = React.useState<any>(null);
@@ -85,7 +92,71 @@ export default function StudentsPage() {
 
   React.useEffect(() => {
     fetchStudents();
+    fetch('/api/courses')
+      .then(res => res.json())
+      .then(data => setCourses(data));
   }, [fetchStudents]);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredStudents.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredStudents.map(s => s.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleBulkEnroll = async () => {
+    if (selectedIds.size === 0) {
+      window.alert('Selecione pelo menos um aluno.');
+      return;
+    }
+    setIsEnrollModalOpen(true);
+  };
+
+  const confirmBulkEnroll = async () => {
+    if (!selectedCourseForEnroll) {
+      window.alert('Selecione um curso.');
+      return;
+    }
+
+    setIsEnrolling(true);
+    try {
+      const response = await fetch('/api/enrollments/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentIds: Array.from(selectedIds),
+          courseId: selectedCourseForEnroll
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        window.alert(`Matrícula em massa concluída! Sucessos: ${result.success}, Erros: ${result.errors}`);
+        setIsEnrollModalOpen(false);
+        setSelectedIds(new Set());
+        fetchStudents();
+      } else {
+        const error = await response.json();
+        window.alert(`Erro ao realizar matrícula: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Bulk enroll failed:', error);
+      window.alert('Erro de conexão ao tentar realizar matrícula em massa.');
+    } finally {
+      setIsEnrolling(false);
+    }
+  };
 
   const filteredStudents = studentsList.filter(s => {
     const name = s.name || '';
@@ -168,7 +239,14 @@ export default function StudentsPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="hidden md:flex items-center bg-white border border-slate-200 rounded-xl px-4 py-1.5 shadow-sm">
-                    <span className="text-[10px] font-black text-slate-400 mr-3 uppercase tracking-widest">Ações em Massa:</span>
+                    <span className="text-[10px] font-black text-slate-400 mr-3 uppercase tracking-widest">Ações em Massa ({selectedIds.size}):</span>
+                    <button 
+                      onClick={handleBulkEnroll}
+                      disabled={selectedIds.size === 0}
+                      className="text-xs font-bold text-slate-600 hover:text-primary px-2 border-r border-slate-200 disabled:opacity-50"
+                    >
+                      Matricular em Curso
+                    </button>
                     <button className="text-xs font-bold text-slate-600 hover:text-primary px-2 border-r border-slate-200">Exportar PDF</button>
                     <button className="text-xs font-bold text-slate-600 hover:text-primary px-2">Mensagem</button>
                   </div>
@@ -221,7 +299,12 @@ export default function StudentsPage() {
                     <thead>
                       <tr className="bg-slate-900">
                         <th className="w-14 px-4 py-4 text-center">
-                          <input type="checkbox" className="rounded border-slate-700 bg-slate-800 text-primary focus:ring-offset-slate-900" />
+                          <input 
+                            type="checkbox" 
+                            checked={selectedIds.size === filteredStudents.length && filteredStudents.length > 0}
+                            onChange={toggleSelectAll}
+                            className="rounded border-slate-700 bg-slate-800 text-primary focus:ring-offset-slate-900" 
+                          />
                         </th>
                         <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-r border-slate-800/50">Perfil do Aluno</th>
                         <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-r border-slate-800/50">Informações de Contato</th>
@@ -243,11 +326,17 @@ export default function StudentsPage() {
                             onClick={() => setSelectedStudent(student)}
                             className={cn(
                               "hover:bg-primary/5 cursor-pointer transition-colors group",
-                              selectedStudent?.id === student.id && "bg-primary/5"
+                              selectedStudent?.id === student.id && "bg-primary/5",
+                              selectedIds.has(student.id) && "bg-primary/10"
                             )}
                           >
                             <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                              <input type="checkbox" className="rounded border-slate-300 text-primary" />
+                              <input 
+                                type="checkbox" 
+                                checked={selectedIds.has(student.id)}
+                                onChange={() => toggleSelect(student.id)}
+                                className="rounded border-slate-300 text-primary" 
+                              />
                             </td>
                             <td className="px-4 py-4">
                               <div className="flex items-center gap-3">
@@ -503,6 +592,73 @@ export default function StudentsPage() {
         description="Tem certeza que deseja excluir este aluno? Esta ação é irreversível e removerá todas as matrículas, notas e histórico associados."
         confirmLabel="Excluir Aluno"
       />
+
+      {/* Bulk Enroll Modal */}
+      <AnimatePresence>
+        {isEnrollModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200"
+            >
+              <div className="p-8">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                    <UserPlus className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Matrícula em Massa</h3>
+                    <p className="text-sm text-slate-500 font-medium">Matricular {selectedIds.size} alunos selecionados</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Selecione o Curso</label>
+                    <select 
+                      value={selectedCourseForEnroll}
+                      onChange={(e) => setSelectedCourseForEnroll(e.target.value)}
+                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3.5 text-sm font-bold focus:border-primary focus:ring-0 transition-all outline-none"
+                    >
+                      <option value="">Selecione um curso...</option>
+                      {courses.map(course => (
+                        <option key={course.id} value={course.id}>{course.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl">
+                    <div className="flex gap-3">
+                      <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+                      <p className="text-xs text-amber-700 leading-relaxed font-medium">
+                        Os alunos serão matriculados na <strong>oferta mais recente</strong> disponível para o curso selecionado.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-8">
+                  <button 
+                    onClick={() => setIsEnrollModalOpen(false)}
+                    className="flex-1 py-3.5 border-2 border-slate-100 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    onClick={confirmBulkEnroll}
+                    disabled={isEnrolling || !selectedCourseForEnroll}
+                    className="flex-1 py-3.5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:brightness-110 shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {isEnrolling ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar Matrícula'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json();
-    const { type, rows, mapping } = data;
+    const { type, rows, mapping, courseId, offerId } = data;
 
     if (!type || !rows || !mapping) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -22,6 +22,23 @@ export async function POST(request: Request) {
       errors: 0,
       details: [] as string[]
     };
+
+    let targetOfferId = offerId;
+
+    // If courseId is provided but not offerId, find the latest offer for this course
+    if (type === 'Alunos' && !targetOfferId && courseId) {
+      const latestOffer = db.prepare(`
+        SELECT oferta_id 
+        FROM oferta_turma 
+        WHERE curso_id = ? 
+        ORDER BY ano DESC, semestre DESC 
+        LIMIT 1
+      `).get(courseId) as { oferta_id: string } | undefined;
+
+      if (latestOffer) {
+        targetOfferId = latestOffer.oferta_id;
+      }
+    }
 
     db.transaction(() => {
       for (const row of rows) {
@@ -176,6 +193,43 @@ export async function POST(request: Request) {
                 row[mapping.formacao_grau] || null,
                 row[mapping.formacao_titulacao] || null
               );
+            }
+
+            // Automatic Enrollment if targetOfferId is set
+            if (targetOfferId) {
+              // Check if already enrolled
+              const existingMatricula = db.prepare('SELECT matricula_id FROM matricula WHERE aluno_id = ? AND oferta_id = ?').get(studentId, targetOfferId);
+              if (!existingMatricula) {
+                const matriculaId = uuidv4();
+                db.prepare(`
+                  INSERT INTO matricula (
+                    matricula_id, aluno_id, oferta_id, status_matricula, 
+                    confirmacao_matricula, data_insercao, progresso_percentual, frequencia_final, nota_final
+                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `).run(
+                  matriculaId,
+                  studentId,
+                  targetOfferId,
+                  'Ativo',
+                  1, // Auto confirm
+                  new Date().toISOString().split('T')[0],
+                  0, // Initial progress
+                  0, // Initial frequency
+                  null // Initial grade
+                );
+
+                // Initialize module grades
+                const modules = db.prepare(`
+                  SELECT modulo_id 
+                  FROM modulo_curso 
+                  WHERE curso_id = (SELECT curso_id FROM oferta_turma WHERE oferta_id = ?)
+                `).all(targetOfferId) as { modulo_id: string }[];
+
+                const insertNota = db.prepare('INSERT INTO nota_modulo_matricula (matricula_id, modulo_id, nota, frequencia) VALUES (?, ?, ?, ?)');
+                for (const mod of modules) {
+                  insertNota.run(matriculaId, mod.modulo_id, 0, 0);
+                }
+              }
             }
 
           } else if (type === 'Cursos') {

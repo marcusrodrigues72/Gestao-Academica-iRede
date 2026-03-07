@@ -14,7 +14,8 @@ import {
   ClipboardList,
   BarChart3,
   Search,
-  X
+  X,
+  UserPlus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
@@ -32,8 +33,16 @@ export default function ImportPage() {
   const [importing, setImporting] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
   const [result, setResult] = React.useState<any>(null);
+  const [courses, setCourses] = React.useState<any[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = React.useState('');
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    fetch('/api/courses')
+      .then(res => res.json())
+      .then(data => setCourses(data));
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -178,7 +187,8 @@ export default function ImportPage() {
         body: JSON.stringify({
           type: selectedType,
           rows,
-          mapping
+          mapping,
+          courseId: selectedCourseId
         })
       });
       
@@ -251,6 +261,34 @@ export default function ImportPage() {
                     </button>
                   ))}
                 </div>
+
+                {selectedType === 'Alunos' && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mt-8 pt-8 border-t border-slate-100"
+                  >
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
+                          <UserPlus className="w-4 h-4" />
+                        </div>
+                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Matrícula Automática (Opcional)</h3>
+                      </div>
+                      <p className="text-xs text-slate-500 font-medium">Selecione um curso para matricular automaticamente todos os alunos importados.</p>
+                      <select 
+                        value={selectedCourseId}
+                        onChange={(e) => setSelectedCourseId(e.target.value)}
+                        className="max-w-md bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold focus:border-primary focus:ring-0 transition-all outline-none"
+                      >
+                        <option value="">Nenhum curso selecionado (apenas importar alunos)</option>
+                        {courses.map(course => (
+                          <option key={course.id} value={course.id}>{course.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </motion.div>
+                )}
               </section>
 
               {/* Step 2: Upload Zone */}
