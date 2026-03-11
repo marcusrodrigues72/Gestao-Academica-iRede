@@ -24,6 +24,7 @@ export default function EditStudentPage() {
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [courses, setCourses] = React.useState<{id: string, name: string}[]>([]);
+  const [offers, setOffers] = React.useState<any[]>([]);
   const [formData, setFormData] = React.useState<any>(null);
 
   React.useEffect(() => {
@@ -41,6 +42,18 @@ export default function EditStudentPage() {
     fetchCourses();
   }, []);
 
+  const fetchOffers = React.useCallback(async (courseId: string) => {
+    try {
+      const response = await fetch(`/api/courses/${courseId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setOffers(data.cycles || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch offers:', error);
+    }
+  }, []);
+
   React.useEffect(() => {
     const fetchStudent = async () => {
       try {
@@ -48,6 +61,18 @@ export default function EditStudentPage() {
         if (response.ok) {
           const data = await response.json();
           setFormData(data);
+          
+          // If student has a course, fetch its offers
+          if (data.courseId) {
+            fetchOffers(data.courseId);
+            
+            // If student has enrollments, set the offerId from the first one
+            if (data.enrollments && data.enrollments.length > 0) {
+              // We need to find which offer is currently active or just the first one
+              // Looking at the API, student.enrollments[0] has the current enrollment info
+              // Let's check the API again to see if we have the offerId there
+            }
+          }
         } else {
           alert('Aluno não encontrado.');
           router.push('/alunos');
@@ -61,11 +86,31 @@ export default function EditStudentPage() {
     if (id) {
       fetchStudent();
     }
-  }, [id, router]);
+  }, [id, router, fetchOffers]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev: any) => ({ ...prev, [name]: value }));
+
+    if (name === 'courseId' && value) {
+      try {
+        const response = await fetch(`/api/courses/${value}`);
+        if (response.ok) {
+          const data = await response.json();
+          setOffers(data.cycles || []);
+          if (data.cycles && data.cycles.length > 0) {
+            setFormData((prev: any) => ({ ...prev, offerId: data.cycles[0].id }));
+          } else {
+            setFormData((prev: any) => ({ ...prev, offerId: '' }));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch offers:', error);
+      }
+    } else if (name === 'courseId' && !value) {
+      setOffers([]);
+      setFormData((prev: any) => ({ ...prev, offerId: '' }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -532,6 +577,24 @@ export default function EditStudentPage() {
                         <option value="">Selecione um curso</option>
                         {courses.map(course => (
                           <option key={course.id} value={course.id}>{course.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Ciclo / Oferta</label>
+                      <select 
+                        required
+                        disabled={!formData.courseId}
+                        name="offerId"
+                        value={formData.offerId || ''}
+                        onChange={handleChange}
+                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all appearance-none disabled:opacity-50"
+                      >
+                        <option value="">{formData.courseId ? 'Selecione a oferta...' : 'Selecione um curso primeiro'}</option>
+                        {offers.map(offer => (
+                          <option key={offer.id} value={offer.id}>
+                            {offer.cycle} - {offer.year}/{offer.semester}º ({offer.class || 'Turma Única'})
+                          </option>
                         ))}
                       </select>
                     </div>

@@ -21,10 +21,12 @@ export default function NewStudentPage() {
   const [activeTab, setActiveTab] = React.useState(1);
   const [loading, setLoading] = React.useState(false);
   const [courses, setCourses] = React.useState<{id: string, name: string}[]>([]);
+  const [offers, setOffers] = React.useState<any[]>([]);
   const [formData, setFormData] = React.useState({
     name: '',
     email: '',
     courseId: '',
+    offerId: '',
     status: 'Ativo',
     progress: 0,
     cpf: '',
@@ -69,9 +71,29 @@ export default function NewStudentPage() {
     fetchCourses();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+
+    if (name === 'courseId' && value) {
+      try {
+        const response = await fetch(`/api/courses/${value}`);
+        if (response.ok) {
+          const data = await response.json();
+          setOffers(data.cycles || []);
+          if (data.cycles && data.cycles.length > 0) {
+            setFormData(prev => ({ ...prev, offerId: data.cycles[0].id }));
+          } else {
+            setFormData(prev => ({ ...prev, offerId: '' }));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch offers:', error);
+      }
+    } else if (name === 'courseId' && !value) {
+      setOffers([]);
+      setFormData(prev => ({ ...prev, offerId: '' }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -525,6 +547,24 @@ export default function NewStudentPage() {
                         <option value="">Selecione um curso</option>
                         {courses.map(course => (
                           <option key={course.id} value={course.id}>{course.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Ciclo / Oferta</label>
+                      <select 
+                        required
+                        disabled={!formData.courseId}
+                        name="offerId"
+                        value={formData.offerId}
+                        onChange={handleChange}
+                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all appearance-none disabled:opacity-50"
+                      >
+                        <option value="">{formData.courseId ? 'Selecione a oferta...' : 'Selecione um curso primeiro'}</option>
+                        {offers.map(offer => (
+                          <option key={offer.id} value={offer.id}>
+                            {offer.cycle} - {offer.year}/{offer.semester}º ({offer.class || 'Turma Única'})
+                          </option>
                         ))}
                       </select>
                     </div>

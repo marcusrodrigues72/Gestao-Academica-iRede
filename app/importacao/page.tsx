@@ -35,9 +35,8 @@ export default function ImportPage() {
   const [result, setResult] = React.useState<any>(null);
   const [courses, setCourses] = React.useState<any[]>([]);
   const [selectedCourseId, setSelectedCourseId] = React.useState('');
-  const [offers, setOffers] = React.useState<any[]>([]);
   const [selectedOfferId, setSelectedOfferId] = React.useState('');
-  const [loadingOffers, setLoadingOffers] = React.useState(false);
+  const [offers, setOffers] = React.useState<any[]>([]);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -49,17 +48,12 @@ export default function ImportPage() {
 
   React.useEffect(() => {
     if (selectedCourseId) {
-      setLoadingOffers(true);
-      setSelectedOfferId('');
-      fetch(`/api/courses/${selectedCourseId}/offers`)
+      fetch(`/api/courses/${selectedCourseId}`)
         .then(res => res.json())
         .then(data => {
-          setOffers(data);
-          if (data.length > 0) {
-            setSelectedOfferId(data[0].id);
-          }
-        })
-        .finally(() => setLoadingOffers(false));
+          setOffers(data.cycles || []);
+          setSelectedOfferId('');
+        });
     } else {
       setOffers([]);
       setSelectedOfferId('');
@@ -299,7 +293,7 @@ export default function ImportPage() {
                         <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Matrícula Automática (Opcional)</h3>
                       </div>
                       <p className="text-xs text-slate-500 font-medium">Selecione um curso e ciclo para matricular automaticamente todos os alunos importados.</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Curso</label>
                           <select 
@@ -307,36 +301,28 @@ export default function ImportPage() {
                             onChange={(e) => setSelectedCourseId(e.target.value)}
                             className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold focus:border-primary focus:ring-0 transition-all outline-none"
                           >
-                            <option value="">Apenas importar alunos (sem matrícula)</option>
+                            <option value="">Nenhum curso selecionado (apenas importar alunos)</option>
                             {courses.map(course => (
                               <option key={course.id} value={course.id}>{course.name}</option>
                             ))}
                           </select>
                         </div>
-                        
-                        {selectedCourseId && (
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ciclo / Oferta</label>
-                            <select 
-                              value={selectedOfferId}
-                              onChange={(e) => setSelectedOfferId(e.target.value)}
-                              disabled={loadingOffers}
-                              className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold focus:border-primary focus:ring-0 transition-all outline-none disabled:opacity-50"
-                            >
-                              {loadingOffers ? (
-                                <option>Carregando ciclos...</option>
-                              ) : offers.length === 0 ? (
-                                <option value="">Nenhum ciclo encontrado</option>
-                              ) : (
-                                offers.map(offer => (
-                                  <option key={offer.id} value={offer.id}>
-                                    {offer.cycle || `Ciclo ${offer.year}.${offer.semester}`} - {offer.class || 'Sem Turma'}
-                                  </option>
-                                ))
-                              )}
-                            </select>
-                          </div>
-                        )}
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ciclo / Oferta</label>
+                          <select 
+                            disabled={!selectedCourseId}
+                            value={selectedOfferId}
+                            onChange={(e) => setSelectedOfferId(e.target.value)}
+                            className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold focus:border-primary focus:ring-0 transition-all outline-none disabled:opacity-50"
+                          >
+                            <option value="">Último ciclo disponível (automático)</option>
+                            {offers.map(offer => (
+                              <option key={offer.id} value={offer.id}>
+                                {offer.cycle} - {offer.year}/{offer.semester}º ({offer.class || 'Turma Única'})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </div>
                   </motion.div>

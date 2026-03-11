@@ -187,10 +187,13 @@ export async function POST(request: Request) {
 
     // 5. Insert Curso/Matrícula
     if (data.courseId) {
-      // Find the most recent offer for this course
-      const offer = db.prepare('SELECT oferta_id FROM oferta_turma WHERE curso_id = ? ORDER BY ano DESC, semestre DESC LIMIT 1').get(data.courseId) as { oferta_id: string } | undefined;
+      let ofertaId = data.offerId;
       
-      let ofertaId = offer?.oferta_id;
+      if (!ofertaId) {
+        // Find the most recent offer for this course
+        const offer = db.prepare('SELECT oferta_id FROM oferta_turma WHERE curso_id = ? ORDER BY ano DESC, semestre DESC LIMIT 1').get(data.courseId) as { oferta_id: string } | undefined;
+        ofertaId = offer?.oferta_id;
+      }
       
       if (!ofertaId) {
         ofertaId = uuidv4();

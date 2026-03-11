@@ -55,6 +55,7 @@ export async function GET(
       m.matricula_id as id,
       cu.nome_curso as course,
       cu.curso_id as courseId,
+      ot.oferta_id as offerId,
       m.progresso_percentual as progress,
       m.status_matricula as status,
       m.nota_final as finalGrade,
@@ -90,6 +91,7 @@ export async function GET(
   if (enrollments.length > 0) {
     student.course = enrollments[0].course;
     student.courseId = enrollments[0].courseId;
+    student.offerId = enrollments[0].offerId;
     student.progress = enrollments[0].progress;
     student.status = enrollments[0].status;
   }
@@ -221,10 +223,13 @@ export async function PUT(
       db.prepare('UPDATE matricula SET status_matricula = COALESCE(?, status_matricula), progresso_percentual = COALESCE(?, progresso_percentual) WHERE aluno_id = ?').run(updates.status || null, updates.progress || null, id);
     }
     if (updates.courseId) {
-      // Find the most recent offer for this course
-      const offer = db.prepare('SELECT oferta_id FROM oferta_turma WHERE curso_id = ? ORDER BY ano DESC, semestre DESC LIMIT 1').get(updates.courseId) as { oferta_id: string } | undefined;
+      let ofertaId = updates.offerId;
       
-      let ofertaId = offer?.oferta_id;
+      if (!ofertaId) {
+        // Find the most recent offer for this course
+        const offer = db.prepare('SELECT oferta_id FROM oferta_turma WHERE curso_id = ? ORDER BY ano DESC, semestre DESC LIMIT 1').get(updates.courseId) as { oferta_id: string } | undefined;
+        ofertaId = offer?.oferta_id;
+      }
       
       if (!ofertaId) {
         ofertaId = uuidv4();
