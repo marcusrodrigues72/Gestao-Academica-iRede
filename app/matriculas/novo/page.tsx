@@ -57,13 +57,13 @@ export default function NewEnrollmentPage() {
       const response = await fetch(`/api/courses/${courseId}`);
       if (response.ok) {
         const data = await response.json();
-        // The course details API now returns an array of offers.
-        const courseOffers = data.offers || [];
-        setOffers(courseOffers);
+        // The API returns 'cycles' as an array of offers
+        const courseCycles = data.cycles || [];
+        setOffers(courseCycles);
         
-        // Auto-select the first offer if available
-        if (courseOffers.length > 0) {
-          setFormData(prev => ({ ...prev, offerId: courseOffers[0].id }));
+        // Optionally auto-select the first offer if available
+        if (courseCycles.length > 0) {
+          setFormData(prev => ({ ...prev, offerId: courseCycles[0].id }));
         }
       }
     } catch (error) {
@@ -170,7 +170,7 @@ export default function NewEnrollmentPage() {
                       options={courses.map(c => ({
                         id: c.id,
                         label: c.name,
-                        sublabel: `Carga Horária: ${c.hours}h • Nível: ${c.level || 'N/A'}`
+                        sublabel: `Programa: ${c.category} • Tecnologia: ${c.technology || 'N/A'}`
                       }))}
                       value={formData.courseId}
                       onChange={(val) => handleCourseChange(val)}
@@ -188,7 +188,7 @@ export default function NewEnrollmentPage() {
                         <option value="">{formData.courseId ? 'Escolha a oferta...' : 'Selecione um curso primeiro'}</option>
                         {offers.map(offer => (
                           <option key={offer.id} value={offer.id}>
-                            {offer.cycle} - {offer.year} ({offer.class || 'Turma Única'})
+                            {offer.cycle} - {offer.year}/{offer.semester}º ({offer.class || 'Turma Única'})
                           </option>
                         ))}
                       </select>
