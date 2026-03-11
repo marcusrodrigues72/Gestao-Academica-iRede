@@ -1,36 +1,27 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { getSession } from '@/lib/auth';
 
 export async function POST(request: Request) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-  }
-
-  // All roles can update grades/frequency
-  // But in a real app, we might restrict which students a professor can see
-
   try {
-    const { matricula_id, nota_final, frequencia_final, progresso_percentual } = await request.json();
+    const body = await request.json();
+    const { grades } = body; // Array of { matricula_id, nota_final, frequencia_final }
 
-    if (!matricula_id) {
-      return NextResponse.json({ error: 'Matrícula não informada' }, { status: 400 });
-    }
-
-    const stmt = db.prepare(`
+    const updateStmt = db.prepare(`
       UPDATE matricula 
-      SET nota_final = ?, 
-          frequencia_final = ?, 
-          progresso_percentual = ? 
+      SET nota_final = ?, frequencia_final = ? 
       WHERE matricula_id = ?
     `);
 
-    stmt.run(nota_final, frequencia_final, progresso_percentual, matricula_id);
+    const transaction = db.transaction((gradesList) => {
+      for (const g of gradesList) {
+        updateStmt.run(g.nota_final, g.frequencia_final, g.matricula_id);
+      }
+    });
+
+    transaction(grades);
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error updating grades:', error);
-    return NextResponse.json({ error: 'Erro ao atualizar notas' }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

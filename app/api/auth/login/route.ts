@@ -8,6 +8,13 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { email, senha } = body;
     console.log('Login attempt for email:', email);
+    
+    // Log headers for debugging
+    const headers: Record<string, string> = {};
+    request.headers.forEach((value, key) => {
+      headers[key] = value;
+    });
+    console.log('Login request headers:', JSON.stringify(headers));
 
     if (!email || !senha) {
       return NextResponse.json({ error: 'E-mail e senha são obrigatórios' }, { status: 400 });
@@ -18,7 +25,7 @@ export async function POST(request: Request) {
       db.prepare('SELECT 1').get();
     } catch (dbError) {
       console.error('Database connection error:', dbError);
-      return NextResponse.json({ error: 'Erro de conexão com o banco de dados' }, { status: 500 });
+      return NextResponse.json({ error: 'Erro de conexão com o banco de dados: ' + (dbError instanceof Error ? dbError.message : String(dbError)) }, { status: 500 });
     }
 
     const user = db.prepare('SELECT * FROM usuario WHERE email = ? AND senha = ?').get(email, senha) as any;
@@ -65,6 +72,8 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Login error:', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Erro interno do servidor: ' + (error instanceof Error ? error.message : String(error)) 
+    }, { status: 500 });
   }
 }

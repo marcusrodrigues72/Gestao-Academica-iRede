@@ -16,45 +16,35 @@ export async function GET(
       c.programa as category,
       c.projeto as project,
       c.tecnologia_objeto as technology,
-      c.descricao as description,
-      ot.oferta_id as offerId,
-      ot.codigo_oferta_externo as offerExternalId,
-      ot.ciclo_edicao as cycle,
-      ot.ano as year,
-      ot.semestre as semester,
-      ot.turma as class,
-      ot.trilha as track,
-      ot.responsavel_tipo as responsibleType,
-      ot.responsavel_nome as responsibleName,
-      ot.data_inicio as startDate,
-      ot.data_fim as endDate
+      c.descricao as description
     FROM curso c
-    LEFT JOIN oferta_turma ot ON c.curso_id = ot.curso_id
     WHERE c.curso_id = ?
-    ORDER BY ot.criado_em DESC
-    LIMIT 1
   `).get(id) as any;
   
   if (!course) {
     return NextResponse.json({ error: 'Course not found' }, { status: 404 });
   }
 
-  // Restructure to include offer object if it exists
-  if (course.offerId) {
-    course.offer = {
-      id: course.offerId,
-      externalId: course.offerExternalId,
-      cycle: course.cycle,
-      year: course.year,
-      semester: course.semester,
-      class: course.class,
-      track: course.track,
-      responsibleType: course.responsibleType,
-      responsibleName: course.responsibleName,
-      startDate: course.startDate,
-      endDate: course.endDate
-    };
-  }
+  // Fetch all cycles (offers)
+  const cycles = db.prepare(`
+    SELECT 
+      oferta_id as id,
+      codigo_oferta_externo as externalId,
+      ciclo_edicao as cycle,
+      ano as year,
+      semestre as semester,
+      turma as class,
+      trilha as track,
+      responsavel_tipo as responsibleType,
+      responsavel_nome as responsibleName,
+      data_inicio as startDate,
+      data_fim as endDate
+    FROM oferta_turma
+    WHERE curso_id = ?
+    ORDER BY criado_em ASC
+  `).all(id);
+
+  course.cycles = cycles;
 
   // Fetch modules
   const modules = db.prepare(`
@@ -97,11 +87,25 @@ export async function PUT(
       id
     );
 
-    // 2. Update latest Oferta or create one if none exists
-    const latestOffer = db.prepare('SELECT oferta_id FROM oferta_turma WHERE curso_id = ? ORDER BY criado_em DESC LIMIT 1').get(id) as { oferta_id: string } | undefined;
-    
-    if (latestOffer) {
-      db.prepare(`
+    // 2. Sync Cycles (Offers)
+    if (data.cycles && Array.isArray(data.cycles)) {
+      const existingCycles = db.prepare('SELECT oferta_id FROM oferta_turma WHERE curso_id = ?').all(id) as { oferta_id: string }[];
+      const incomingCycleIds = data.cycles.filter((c: any) => c.id).map((c: any) => c.id);
+      
+      const cyclesToDelete = existingCycles.filter(ec => !incomingCycleIds.includes(ec.oferta_id));
+      
+      if (cyclesToDelete.length > 0) {
+        const deleteCycle = db.prepare('DELETE FROM oferta_turma WHERE oferta_id = ?');
+        cyclesToDelete.forEach(c => deleteCycle.run(c.oferta_id));
+      }
+
+      const insertCycle = db.prepare(`
+        INSERT INTO oferta_turma (
+          oferta_id, curso_id, codigo_oferta_externo, ciclo_edicao, ano, semestre, turma, trilha, responsavel_tipo, responsavel_nome, data_inicio, data_fim
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      const updateCycle = db.prepare(`
         UPDATE oferta_turma SET 
           codigo_oferta_externo = ?,
           ciclo_edicao = ?,
@@ -114,19 +118,40 @@ export async function PUT(
           data_inicio = ?,
           data_fim = ?
         WHERE oferta_id = ?
-      `).run(
-        data.offerExternalId || null,
-        data.cycle || null,
-        data.year ? parseInt(data.year) : null,
-        data.semester ? parseInt(data.semester) : null,
-        data.class || null,
-        data.track || null,
-        data.responsibleType || null,
-        data.responsibleName || null,
-        data.startDate || null,
-        data.endDate || null,
-        latestOffer.oferta_id
-      );
+      `);
+
+      data.cycles.forEach((cycle: any) => {
+        if (cycle.id) {
+          updateCycle.run(
+            cycle.externalId || null,
+            cycle.cycle || null,
+            cycle.year ? parseInt(cycle.year) : null,
+            cycle.semester ? parseInt(cycle.semester) : null,
+            cycle.class || null,
+            cycle.track || null,
+            cycle.responsibleType || null,
+            cycle.responsibleName || null,
+            cycle.startDate || null,
+            cycle.endDate || null,
+            cycle.id
+          );
+        } else {
+          insertCycle.run(
+            uuidv4(),
+            id,
+            cycle.externalId || null,
+            cycle.cycle || null,
+            cycle.year ? parseInt(cycle.year) : null,
+            cycle.semester ? parseInt(cycle.semester) : null,
+            cycle.class || null,
+            cycle.track || null,
+            cycle.responsibleType || null,
+            cycle.responsibleName || null,
+            cycle.startDate || null,
+            cycle.endDate || null
+          );
+        }
+      });
     }
 
     // 3. Update Modules

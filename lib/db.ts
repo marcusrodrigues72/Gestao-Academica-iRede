@@ -141,7 +141,7 @@ CREATE INDEX IF NOT EXISTS idx_modulo_curso_id ON modulo_curso (curso_id);
 -- =========================
 CREATE TABLE IF NOT EXISTS oferta_turma (
   oferta_id             TEXT PRIMARY KEY DEFAULT (gen_random_uuid()),
-  curso_id              TEXT NOT NULL REFERENCES curso(curso_id) ON DELETE RESTRICT,
+  curso_id              TEXT NOT NULL REFERENCES curso(curso_id) ON DELETE CASCADE,
   codigo_oferta_externo TEXT,  -- ex.: Id | Curso
   ciclo_edicao          TEXT,  -- ex.: Ciclo 2 - 2026
   ano                   INTEGER,
@@ -259,79 +259,83 @@ if (!hasPlataforma) {
 // Seed initial data if empty
 const alunoCount = db.prepare('SELECT COUNT(*) as count FROM aluno').get() as { count: number };
 if (alunoCount.count === 0) {
-  const initialStudents = [
-    { id: 'ST-8821', name: 'Alex Johnson', email: 'alex.j@example.com', course: 'Digital Marketing', progress: 65, status: 'Ativo', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBFw7C12upUllg6DeLoee2aTfkNniT8jWiy1yhaGRQt_eX0HfoHlLUxkwJjM4LEIjIy1Zt0dEWShI_xcbD0apvs5grfV3Un3Rx3SIbSF4a1xk_Rb4G4vmgaJmNQ2DLM-_nGf_mKe3hlDDo4aWx7LHqsxj0CIVopnVcsFTGmaqK5ErI7NqEZSdPtxBhSX9tkYWDudzGu_631I4cuG-G_6WmGrv5jyrRJ0Hih3I643l1Vj5-U2cfGuwtWDWku_qv35M3mhLIBh0VoTuM', city: 'São Paulo', state: 'SP' },
-    { id: 'ST-9012', name: 'Maria Garcia', email: 'm.garcia@univ.edu', course: 'Data Science', progress: 85, status: 'On Hold', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuClUy6zgorEGMpOtZ4z5W3GjN_lPsK1KkbMO8CfHg0U2fOSJ3TFB3Wq176F1vL_cRM--d-ZM5-LCp8g39svbN6P3km1b7hCeL2_WDS5VVVjuW_sWHV5qBx3ko8ubgJpPNfbRG0gttsImb11T4eRiHcmerb8P9JKMLB7Ga9o_RxclJJCHVSWyWAWHfqRy_DdCdXvUEW5SdYx50wj7VuyDlVM-nuZPaG9TI6tysC-X8qggPZ_qXpLsjnk-vaPdQECqE8YQLqr-C8JcQ4', city: 'Rio de Janeiro', state: 'RJ' },
-    { id: 'ST-7734', name: 'James Smith', email: 'jsmith@domain.com', course: 'UX Masterclass', progress: 92, status: 'Ativo', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuARziGcsPEt_r07OLwZcKF9DIsTB4jgfPC9ocBf0y3KDlV0BicDGzDnreSnSCPNeTSVu8RGdKo5feMUoQy_BmWz3tt1RoTpkn4evC2LKABQcI2TPH6Yfdji1ig6D6N8cKx8FWRFnT2cv5va92rny7zvdatKW7y0smxkqJuhFK2u3EWVAhzTymjd82iMnKq9hK35QkST8ZcRFhkQjFxXbf02uULAfrnZ8EHFSOBP8sjNvVQFQWPDZRznWAz2YZD1CgDBQYR7YNF7iwc', city: 'Belo Horizonte', state: 'MG' },
-    { id: 'ST-8109', name: 'Sarah Chen', email: 'schen@global.net', course: 'Python Basics', progress: 10, status: 'Inativo', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA43NQHFo7C1jPDxn80g4shGmLrhtuw7OrMDIP5rUlQeHrdPOyWu037hnpz_NTd-NwkRYIxJcEDFddy6YvzDt8_BBQQ1XxDfVV0iF_uWgdGfUak3PYyaZYRkz1E3kWdopOA6N3uvVBdhBssAxwUMC_hKHoWURqkSZUEWeaC7aMZpmdGEAP9CSH_jd2cR0GVaFfCfAZMnahKI4q6zjETGJyegTXxPMKYipIQfdZqIxe8xHieRbaJzJvQezbEeDyBFpWv5eyZbWpgMw4', city: 'Curitiba', state: 'PR' },
-    { id: 'ST-1234', name: 'João Silva', email: 'joao@example.com', course: 'Blockchain para Negócios', progress: 45, status: 'Ativo', avatar: 'https://picsum.photos/seed/joao/200', city: 'Recife', state: 'PE' },
-    { id: 'ST-5678', name: 'Ana Souza', email: 'ana@example.com', course: 'Inteligência Artificial', progress: 78, status: 'Ativo', avatar: 'https://picsum.photos/seed/ana/200', city: 'Fortaleza', state: 'CE' },
-    { id: 'ST-9999', name: 'Pedro Lima', email: 'pedro@example.com', course: 'Cibersegurança', progress: 30, status: 'Ativo', avatar: 'https://picsum.photos/seed/pedro/200', city: 'Manaus', state: 'AM' },
-  ];
+  try {
+    const initialStudents = [
+      { id: 'ST-8821', name: 'Alex Johnson', email: 'alex.j@example.com', course: 'Digital Marketing', progress: 65, status: 'Ativo', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBFw7C12upUllg6DeLoee2aTfkNniT8jWiy1yhaGRQt_eX0HfoHlLUxkwJjM4LEIjIy1Zt0dEWShI_xcbD0apvs5grfV3Un3Rx3SIbSF4a1xk_Rb4G4vmgaJmNQ2DLM-_nGf_mKe3hlDDo4aWx7LHqsxj0CIVopnVcsFTGmaqK5ErI7NqEZSdPtxBhSX9tkYWDudzGu_631I4cuG-G_6WmGrv5jyrRJ0Hih3I643l1Vj5-U2cfGuwtWDWku_qv35M3mhLIBh0VoTuM', city: 'São Paulo', state: 'SP' },
+      { id: 'ST-9012', name: 'Maria Garcia', email: 'm.garcia@univ.edu', course: 'Data Science', progress: 85, status: 'On Hold', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuClUy6zgorEGMpOtZ4z5W3GjN_lPsK1KkbMO8CfHg0U2fOSJ3TFB3Wq176F1vL_cRM--d-ZM5-LCp8g39svbN6P3km1b7hCeL2_WDS5VVVjuW_sWHV5qBx3ko8ubgJpPNfbRG0gttsImb11T4eRiHcmerb8P9JKMLB7Ga9o_RxclJJCHVSWyWAWHfqRy_DdCdXvUEW5SdYx50wj7VuyDlVM-nuZPaG9TI6tysC-X8qggPZ_qXpLsjnk-vaPdQECqE8YQLqr-C8JcQ4', city: 'Rio de Janeiro', state: 'RJ' },
+      { id: 'ST-7734', name: 'James Smith', email: 'jsmith@domain.com', course: 'UX Masterclass', progress: 92, status: 'Ativo', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuARziGcsPEt_r07OLwZcKF9DIsTB4jgfPC9ocBf0y3KDlV0BicDGzDnreSnSCPNeTSVu8RGdKo5feMUoQy_BmWz3tt1RoTpkn4evC2LKABQcI2TPH6Yfdji1ig6D6N8cKx8FWRFnT2cv5va92rny7zvdatKW7y0smxkqJuhFK2u3EWVAhzTymjd82iMnKq9hK35QkST8ZcRFhkQjFxXbf02uULAfrnZ8EHFSOBP8sjNvVQFQWPDZRznWAz2YZD1CgDBQYR7YNF7iwc', city: 'Belo Horizonte', state: 'MG' },
+      { id: 'ST-8109', name: 'Sarah Chen', email: 'schen@global.net', course: 'Python Basics', progress: 10, status: 'Inativo', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA43NQHFo7C1jPDxn80g4shGmLrhtuw7OrMDIP5rUlQeHrdPOyWu037hnpz_NTd-NwkRYIxJcEDFddy6YvzDt8_BBQQ1XxDfVV0iF_uWgdGfUak3PYyaZYRkz1E3kWdopOA6N3uvVBdhBssAxwUMC_hKHoWURqkSZUEWeaC7aMZpmdGEAP9CSH_jd2cR0GVaFfCfAZMnahKI4q6zjETGJyegTXxPMKYipIQfdZqIxe8xHieRbaJzJvQezbEeDyBFpWv5eyZbWpgMw4', city: 'Curitiba', state: 'PR' },
+      { id: 'ST-1234', name: 'João Silva', email: 'joao@example.com', course: 'Blockchain para Negócios', progress: 45, status: 'Ativo', avatar: 'https://picsum.photos/seed/joao/200', city: 'Recife', state: 'PE' },
+      { id: 'ST-5678', name: 'Ana Souza', email: 'ana@example.com', course: 'Inteligência Artificial', progress: 78, status: 'Ativo', avatar: 'https://picsum.photos/seed/ana/200', city: 'Fortaleza', state: 'CE' },
+      { id: 'ST-9999', name: 'Pedro Lima', email: 'pedro@example.com', course: 'Cibersegurança', progress: 30, status: 'Ativo', avatar: 'https://picsum.photos/seed/pedro/200', city: 'Manaus', state: 'AM' },
+    ];
 
-  const insertAluno = db.prepare('INSERT OR IGNORE INTO aluno (aluno_id, nome, cpf, avatar) VALUES (?, ?, ?, ?)');
-  const insertContato = db.prepare('INSERT OR IGNORE INTO contato_aluno (aluno_id, tipo, valor, principal) VALUES (?, ?, ?, ?)');
-  const insertEndereco = db.prepare('INSERT OR IGNORE INTO endereco_aluno (aluno_id, cidade, estado) VALUES (?, ?, ?)');
-  const insertCurso = db.prepare('INSERT OR IGNORE INTO curso (curso_id, nome_curso, programa, projeto, tecnologia_objeto) VALUES (?, ?, ?, ?, ?)');
-  const insertOferta = db.prepare('INSERT OR IGNORE INTO oferta_turma (oferta_id, curso_id, turma, ciclo_edicao) VALUES (?, ?, ?, ?)');
-  const insertMatricula = db.prepare('INSERT OR IGNORE INTO matricula (aluno_id, oferta_id, status_matricula, progresso_percentual, nota_final, frequencia_final) VALUES (?, ?, ?, ?, ?, ?)');
+    const insertAluno = db.prepare('INSERT OR IGNORE INTO aluno (aluno_id, nome, cpf, avatar) VALUES (?, ?, ?, ?)');
+    const insertContato = db.prepare('INSERT OR IGNORE INTO contato_aluno (aluno_id, tipo, valor, principal) VALUES (?, ?, ?, ?)');
+    const insertEndereco = db.prepare('INSERT OR IGNORE INTO endereco_aluno (aluno_id, cidade, estado) VALUES (?, ?, ?)');
+    const insertCurso = db.prepare('INSERT OR IGNORE INTO curso (curso_id, nome_curso, programa, projeto, tecnologia_objeto) VALUES (?, ?, ?, ?, ?)');
+    const insertOferta = db.prepare('INSERT OR IGNORE INTO oferta_turma (oferta_id, curso_id, turma, ciclo_edicao) VALUES (?, ?, ?, ?)');
+    const insertMatricula = db.prepare('INSERT OR IGNORE INTO matricula (aluno_id, oferta_id, status_matricula, progresso_percentual, nota_final, frequencia_final) VALUES (?, ?, ?, ?, ?, ?)');
 
-  const techMap: any = {
-    'Digital Marketing': 'Marketing Digital',
-    'Data Science': 'Inteligência Artificial',
-    'UX Masterclass': 'UX Design Avançado',
-    'Python Basics': 'Cloud Computing',
-    'Blockchain para Negócios': 'Blockchain & Web3',
-    'Inteligência Artificial': 'Inteligência Artificial',
-    'Cibersegurança': 'Cibersegurança'
-  };
+    const techMap: any = {
+      'Digital Marketing': 'Marketing Digital',
+      'Data Science': 'Inteligência Artificial',
+      'UX Masterclass': 'UX Design Avançado',
+      'Python Basics': 'Cloud Computing',
+      'Blockchain para Negócios': 'Blockchain & Web3',
+      'Inteligência Artificial': 'Inteligência Artificial',
+      'Cibersegurança': 'Cibersegurança'
+    };
 
-  for (const s of initialStudents) {
-    const alunoId = s.id;
-    const cpf = `000.000.000-${Math.floor(10 + Math.random() * 89)}`;
-    
-    // 1. Aluno
-    insertAluno.run(alunoId, s.name, cpf, s.avatar);
-    
-    // 2. Contato e Endereço (vinculados ao alunoId)
-    insertContato.run(alunoId, 'email_principal', s.email, 1);
-    insertEndereco.run(alunoId, s.city, s.state);
-    
-    // 3. Curso (Verificar se já existe para evitar falha de FK na Oferta)
-    const programa = 'Tecnologia';
-    const projeto = 'iRede';
-    const tecnologia = techMap[s.course] || 'Geral';
-    
-    let cursoId: string;
-    const existingCurso = db.prepare('SELECT curso_id FROM curso WHERE nome_curso = ? AND programa = ? AND projeto = ? AND tecnologia_objeto = ?')
-      .get(s.course, programa, projeto, tecnologia) as { curso_id: string } | undefined;
-    
-    if (existingCurso) {
-      cursoId = existingCurso.curso_id;
-    } else {
-      cursoId = uuidv4();
-      insertCurso.run(cursoId, s.course, programa, projeto, tecnologia);
-    }
-    
-    // 4. Oferta (Verificar se já existe para este curso e turma)
-    const turma = 'Turma A';
-    const ciclo = '2024.1';
-    
-    let ofertaId: string;
-    const existingOferta = db.prepare('SELECT oferta_id FROM oferta_turma WHERE curso_id = ? AND turma = ? AND ciclo_edicao = ?')
-      .get(cursoId, turma, ciclo) as { oferta_id: string } | undefined;
+    for (const s of initialStudents) {
+      const alunoId = s.id;
+      const cpf = `000.000.000-${Math.floor(10 + Math.random() * 89)}`;
       
-    if (existingOferta) {
-      ofertaId = existingOferta.oferta_id;
-    } else {
-      ofertaId = uuidv4();
-      insertOferta.run(ofertaId, cursoId, turma, ciclo);
+      // 1. Aluno
+      insertAluno.run(alunoId, s.name, cpf, s.avatar);
+      
+      // 2. Contato e Endereço (vinculados ao alunoId)
+      insertContato.run(alunoId, 'email_principal', s.email, 1);
+      insertEndereco.run(alunoId, s.city, s.state);
+      
+      // 3. Curso (Verificar se já existe para evitar falha de FK na Oferta)
+      const programa = 'Tecnologia';
+      const projeto = 'iRede';
+      const tecnologia = techMap[s.course] || 'Geral';
+      
+      let cursoId: string;
+      const existingCurso = db.prepare('SELECT curso_id FROM curso WHERE nome_curso = ? AND programa = ? AND projeto = ? AND tecnologia_objeto = ?')
+        .get(s.course, programa, projeto, tecnologia) as { curso_id: string } | undefined;
+      
+      if (existingCurso) {
+        cursoId = existingCurso.curso_id;
+      } else {
+        cursoId = uuidv4();
+        insertCurso.run(cursoId, s.course, programa, projeto, tecnologia);
+      }
+      
+      // 4. Oferta (Verificar se já existe para este curso e turma)
+      const turma = 'Turma A';
+      const ciclo = '2024.1';
+      
+      let ofertaId: string;
+      const existingOferta = db.prepare('SELECT oferta_id FROM oferta_turma WHERE curso_id = ? AND turma = ? AND ciclo_edicao = ?')
+        .get(cursoId, turma, ciclo) as { oferta_id: string } | undefined;
+        
+      if (existingOferta) {
+        ofertaId = existingOferta.oferta_id;
+      } else {
+        ofertaId = uuidv4();
+        insertOferta.run(ofertaId, cursoId, turma, ciclo);
+      }
+      
+      // 5. Matrícula
+      const notaFinal = s.progress < 50 ? 4.2 : 8.5;
+      const freqFinal = s.progress < 50 ? 65 : 95;
+      insertMatricula.run(alunoId, ofertaId, s.status, s.progress, notaFinal, freqFinal);
     }
-    
-    // 5. Matrícula
-    const notaFinal = s.progress < 50 ? 4.2 : 8.5;
-    const freqFinal = s.progress < 50 ? 65 : 95;
-    insertMatricula.run(alunoId, ofertaId, s.status, s.progress, notaFinal, freqFinal);
+  } catch (seedError) {
+    console.error('Error during database seeding:', seedError);
   }
 }
 

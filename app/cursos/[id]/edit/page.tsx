@@ -8,7 +8,10 @@ import {
   User, 
   Info, 
   ArrowLeft,
-  GraduationCap
+  GraduationCap,
+  Plus,
+  Trash2,
+  Clock
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRouter, useParams } from 'next/navigation';
@@ -19,6 +22,7 @@ export default function EditCoursePage() {
   const { id } = useParams();
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
+  const [activeCycleIndex, setActiveCycleIndex] = React.useState(0);
   const [formData, setFormData] = React.useState({
     externalId: '',
     name: '',
@@ -26,17 +30,20 @@ export default function EditCoursePage() {
     project: '',
     technology: '',
     description: '',
-    offerExternalId: '',
-    cycle: '',
-    year: new Date().getFullYear().toString(),
-    semester: '1',
-    class: '',
-    track: '',
-    responsibleType: 'Professor',
-    responsibleName: '',
-    startDate: '',
-    endDate: '',
-    modules: [] as { id?: string, title: string }[]
+    modules: [] as { id?: string, title: string }[],
+    cycles: [] as {
+      id?: string;
+      externalId: string;
+      cycle: string;
+      year: string;
+      semester: string;
+      class: string;
+      track: string;
+      responsibleType: string;
+      responsibleName: string;
+      startDate: string;
+      endDate: string;
+    }[]
   });
 
   React.useEffect(() => {
@@ -52,17 +59,23 @@ export default function EditCoursePage() {
             project: data.project || '',
             technology: data.technology || '',
             description: data.description || '',
-            offerExternalId: data.offerExternalId || '',
-            cycle: data.cycle || '',
-            year: (data.year || new Date().getFullYear()).toString(),
-            semester: (data.semester || 1).toString(),
-            class: data.class || '',
-            track: data.track || '',
-            responsibleType: data.responsibleType || 'Professor',
-            responsibleName: data.responsibleName || '',
-            startDate: data.startDate || '',
-            endDate: data.endDate || '',
-            modules: data.modules || []
+            modules: data.modules || [],
+            cycles: data.cycles && data.cycles.length > 0 ? data.cycles.map((c: any) => ({
+              ...c,
+              year: (c.year || new Date().getFullYear()).toString(),
+              semester: (c.semester || 1).toString(),
+            })) : [{
+              externalId: '',
+              cycle: 'Ciclo 1',
+              year: new Date().getFullYear().toString(),
+              semester: '1',
+              class: '',
+              track: '',
+              responsibleType: 'Professor',
+              responsibleName: '',
+              startDate: '',
+              endDate: '',
+            }]
           });
         }
       } catch (error) {
@@ -77,6 +90,39 @@ export default function EditCoursePage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCycleChange = (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    const newCycles = [...formData.cycles];
+    newCycles[index] = { ...newCycles[index], [name]: value };
+    setFormData(prev => ({ ...prev, cycles: newCycles }));
+  };
+
+  const addCycle = () => {
+    const newCycle = {
+      externalId: '',
+      cycle: `Novo Ciclo ${formData.cycles.length + 1}`,
+      year: new Date().getFullYear().toString(),
+      semester: '1',
+      class: '',
+      track: '',
+      responsibleType: 'Professor',
+      responsibleName: '',
+      startDate: '',
+      endDate: '',
+    };
+    setFormData(prev => ({ ...prev, cycles: [...prev.cycles, newCycle] }));
+    setActiveCycleIndex(formData.cycles.length);
+  };
+
+  const removeCycle = (index: number) => {
+    if (formData.cycles.length <= 1) return;
+    const newCycles = formData.cycles.filter((_, i) => i !== index);
+    setFormData(prev => ({ ...prev, cycles: newCycles }));
+    if (activeCycleIndex >= newCycles.length) {
+      setActiveCycleIndex(newCycles.length - 1);
+    }
   };
 
   const handleModuleChange = (index: number, value: string) => {
@@ -107,7 +153,7 @@ export default function EditCoursePage() {
       });
       
       if (response.ok) {
-        alert('Curso e oferta atualizados com sucesso!');
+        alert('Curso e ciclos atualizados com sucesso!');
         router.push('/cursos');
       } else {
         alert('Erro ao atualizar curso.');
@@ -136,8 +182,8 @@ export default function EditCoursePage() {
       <Sidebar />
       <main className="flex-1 flex flex-col overflow-hidden">
         <TopBar 
-          title="Editar Curso e Oferta" 
-          subtitle="Gerencie a oferta acadêmica e trilhas de aprendizagem" 
+          title="Editar Configuração de Curso" 
+          subtitle="Atualize o modelo base e gerencie os ciclos de execução" 
         />
         
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
@@ -148,14 +194,14 @@ export default function EditCoursePage() {
               <ChevronRight className="w-4 h-4" />
               <button onClick={() => router.push('/cursos')} className="hover:text-primary">Cursos & Extensão</button>
               <ChevronRight className="w-4 h-4" />
-              <span className="text-slate-900 font-medium">Editar Oferta</span>
+              <span className="text-slate-900 font-medium">Editar Curso e Ciclos</span>
             </nav>
 
             {/* Header Title */}
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Editar Curso e Oferta Acadêmica</h1>
-                <p className="text-slate-600 max-w-2xl text-sm">Atualize as informações principais do curso e os detalhes específicos de cada oferta, incluindo responsáveis e cronograma.</p>
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Editar Configuração de Curso</h1>
+                <p className="text-slate-600 max-w-2xl text-sm font-medium">Atualize as informações do modelo base e gerencie as ofertas acadêmicas (ciclos) associadas.</p>
               </div>
               <button 
                 onClick={() => router.back()}
@@ -170,7 +216,7 @@ export default function EditCoursePage() {
               <section className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
                 <div className="flex items-center gap-3 mb-6">
                   <span className="flex items-center justify-center size-8 bg-primary rounded-lg text-white font-bold">1</span>
-                  <h2 className="text-xl font-bold text-slate-900">Informações do Curso</h2>
+                  <h2 className="text-xl font-bold text-slate-900">Informações do Curso (Modelo Base)</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
@@ -179,7 +225,7 @@ export default function EditCoursePage() {
                       name="externalId"
                       value={formData.externalId}
                       onChange={handleChange}
-                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3" 
+                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3 font-medium" 
                       placeholder="Ex: EXT-2024-001" 
                       type="text"
                     />
@@ -191,7 +237,7 @@ export default function EditCoursePage() {
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3" 
+                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3 font-medium" 
                       placeholder="Ex: Desenvolvimento Web Fullstack" 
                       type="text"
                     />
@@ -202,7 +248,7 @@ export default function EditCoursePage() {
                       name="category"
                       value={formData.category}
                       onChange={handleChange}
-                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3"
+                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3 font-medium"
                     >
                       <option>Tecnologia da Informação</option>
                       <option>Gestão e Negócios</option>
@@ -216,7 +262,7 @@ export default function EditCoursePage() {
                       name="project"
                       value={formData.project}
                       onChange={handleChange}
-                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3" 
+                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3 font-medium" 
                       placeholder="Nome do projeto associado" 
                       type="text"
                     />
@@ -227,7 +273,7 @@ export default function EditCoursePage() {
                       name="technology"
                       value={formData.technology}
                       onChange={handleChange}
-                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3" 
+                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3 font-medium" 
                       placeholder="Ex: React, Node.js, Python" 
                       type="text"
                     />
@@ -238,7 +284,7 @@ export default function EditCoursePage() {
                       name="description"
                       value={formData.description}
                       onChange={handleChange}
-                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3" 
+                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3 font-medium" 
                       placeholder="Breve resumo dos objetivos e conteúdo do curso" 
                       rows={3}
                     />
@@ -246,176 +292,19 @@ export default function EditCoursePage() {
                 </div>
               </section>
 
-              {/* Section 2: Detalhes da Oferta */}
-              <section className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="flex items-center justify-center size-8 bg-primary rounded-lg text-white font-bold">2</span>
-                  <h2 className="text-xl font-bold text-slate-900">Detalhes da Oferta</h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700">Código Externo</label>
-                    <input 
-                      name="offerExternalId"
-                      value={formData.offerExternalId}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3" 
-                      placeholder="COD-EXT-99" 
-                      type="text"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700">Ciclo / Edição</label>
-                    <input 
-                      name="cycle"
-                      value={formData.cycle}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3" 
-                      placeholder="Ex: 3ª Edição" 
-                      type="text"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700">Ano</label>
-                    <input 
-                      name="year"
-                      value={formData.year}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3" 
-                      type="number"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700">Semestre</label>
-                    <select 
-                      name="semester"
-                      value={formData.semester}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3"
-                    >
-                      <option value="1">1º Semestre</option>
-                      <option value="2">2º Semestre</option>
-                      <option value="3">Intensivo de Verão</option>
-                      <option value="4">Intensivo de Inverno</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700">Turma</label>
-                    <input 
-                      name="class"
-                      value={formData.class}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3" 
-                      placeholder="Ex: Turma A - Noturno" 
-                      type="text"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700">Trilha</label>
-                    <input 
-                      name="track"
-                      value={formData.track}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3" 
-                      placeholder="Ex: Avançada" 
-                      type="text"
-                    />
-                  </div>
-                </div>
-              </section>
-
-              {/* Section 3: Responsável e Datas */}
-              <section className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="flex items-center justify-center size-8 bg-primary rounded-lg text-white font-bold">3</span>
-                  <h2 className="text-xl font-bold text-slate-900">Responsável e Datas</h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700">Tipo de Vínculo</label>
-                      <div className="flex gap-4 p-1 bg-slate-100 rounded-lg w-fit">
-                        <button 
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, responsibleType: 'Professor' }))}
-                          className={cn(
-                            "px-6 py-2 rounded-md text-sm font-bold transition-all",
-                            formData.responsibleType === 'Professor' ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
-                          )}
-                        >
-                          Professor
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, responsibleType: 'Mentor' }))}
-                          className={cn(
-                            "px-6 py-2 rounded-md text-sm font-bold transition-all",
-                            formData.responsibleType === 'Mentor' ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
-                          )}
-                        >
-                          Mentor
-                        </button>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700">Nome do Responsável</label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                        <input 
-                          name="responsibleName"
-                          value={formData.responsibleName}
-                          onChange={handleChange}
-                          className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary pl-10 pr-4 py-3" 
-                          placeholder="Pesquisar docente..." 
-                          type="text"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700">Data de Início</label>
-                      <input 
-                        name="startDate"
-                        value={formData.startDate}
-                        onChange={handleChange}
-                        className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3" 
-                        type="date"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700">Data de Fim</label>
-                      <input 
-                        name="endDate"
-                        value={formData.endDate}
-                        onChange={handleChange}
-                        className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3" 
-                        type="date"
-                      />
-                    </div>
-                    <div className="sm:col-span-2 p-4 bg-primary/5 border border-primary/10 rounded-lg flex items-start gap-3">
-                      <Info className="w-5 h-5 text-primary shrink-0" />
-                      <p className="text-xs text-slate-600">
-                        Certifique-se de que a data de fim seja posterior à data de início e contemple o período de exames finais.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Section 4: Estrutura de Módulos */}
+              {/* Section 2: Estrutura de Módulos */}
               <section className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
-                    <span className="flex items-center justify-center size-8 bg-primary rounded-lg text-white font-bold">4</span>
-                    <h2 className="text-xl font-bold text-slate-900">Estrutura de Módulos</h2>
+                    <span className="flex items-center justify-center size-8 bg-primary rounded-lg text-white font-bold">2</span>
+                    <h2 className="text-xl font-bold text-slate-900">Estrutura de Módulos (Conteúdo Base)</h2>
                   </div>
                   <button 
                     type="button"
                     onClick={addModule}
                     className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-all"
                   >
-                    <span className="text-lg">+</span> Adicionar Módulo
+                    <Plus className="w-4 h-4" /> Adicionar Módulo
                   </button>
                 </div>
                 
@@ -427,7 +316,7 @@ export default function EditCoursePage() {
                         <input 
                           value={mod.title}
                           onChange={(e) => handleModuleChange(index, e.target.value)}
-                          className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3" 
+                          className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3 font-medium" 
                           placeholder="Ex: Introdução ao Banco de Dados" 
                           type="text"
                           required
@@ -439,21 +328,167 @@ export default function EditCoursePage() {
                         className="mb-1 p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         title="Remover Módulo"
                       >
-                        <span className="material-symbols-outlined">delete</span>
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
                   ))}
                   {formData.modules.length === 0 && (
-                    <p className="text-sm text-slate-500 italic">Nenhum módulo cadastrado. Adicione módulos para habilitar o lançamento de notas.</p>
+                    <p className="text-sm text-slate-500 italic">Nenhum módulo cadastrado.</p>
                   )}
                 </div>
-                
-                <div className="mt-8 pt-6 border-t border-slate-100">
-                  <p className="text-sm text-slate-500 flex items-center gap-2">
-                    <Info className="w-4 h-4" />
-                    Defina a estrutura sequencial dos módulos que compõem este curso.
-                  </p>
+              </section>
+
+              {/* Section 3: Ciclos de Execução */}
+              <section className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center justify-center size-8 bg-primary rounded-lg text-white font-bold">3</span>
+                    <h2 className="text-xl font-bold text-slate-900">Ciclos de Execução (Ofertas)</h2>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={addCycle}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/10"
+                  >
+                    <Plus className="w-4 h-4" /> Adicionar Novo Ciclo
+                  </button>
                 </div>
+
+                <div className="mb-6">
+                  <div className="border-b border-slate-200 overflow-x-auto">
+                    <nav className="flex gap-4 min-w-max">
+                      {formData.cycles.map((cycle, index) => (
+                        <button 
+                          key={index}
+                          type="button"
+                          onClick={() => setActiveCycleIndex(index)}
+                          className={cn(
+                            "py-4 px-1 text-sm font-bold flex items-center gap-2 border-b-2 transition-all",
+                            activeCycleIndex === index 
+                              ? "border-primary text-primary" 
+                              : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+                          )}
+                        >
+                          <Clock className="w-4 h-4" />
+                          {cycle.cycle || `Ciclo ${index + 1}`}
+                        </button>
+                      ))}
+                    </nav>
+                  </div>
+                </div>
+
+                {formData.cycles.length > 0 && (
+                  <div className="space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">Identificação do Ciclo</label>
+                        <input 
+                          name="cycle"
+                          value={formData.cycles[activeCycleIndex].cycle}
+                          onChange={(e) => handleCycleChange(activeCycleIndex, e)}
+                          className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3 font-bold" 
+                          placeholder="Ex: Ciclo 1 - 2024" 
+                          type="text"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">Código Externo</label>
+                        <input 
+                          name="externalId"
+                          value={formData.cycles[activeCycleIndex].externalId}
+                          onChange={(e) => handleCycleChange(activeCycleIndex, e)}
+                          className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3 font-medium" 
+                          placeholder="COD-EXT-99" 
+                          type="text"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">Semestre</label>
+                        <select 
+                          name="semester"
+                          value={formData.cycles[activeCycleIndex].semester}
+                          onChange={(e) => handleCycleChange(activeCycleIndex, e)}
+                          className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3 font-medium"
+                        >
+                          <option value="1">1º Semestre</option>
+                          <option value="2">2º Semestre</option>
+                          <option value="3">Intensivo de Verão</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">Turma</label>
+                        <input 
+                          name="class"
+                          value={formData.cycles[activeCycleIndex].class}
+                          onChange={(e) => handleCycleChange(activeCycleIndex, e)}
+                          className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3 font-medium" 
+                          placeholder="Ex: Turma A - Noturno" 
+                          type="text"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">Trilha</label>
+                        <input 
+                          name="track"
+                          value={formData.cycles[activeCycleIndex].track}
+                          onChange={(e) => handleCycleChange(activeCycleIndex, e)}
+                          className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary px-4 py-3 font-medium" 
+                          placeholder="Ex: Avançada" 
+                          type="text"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">Responsável</label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                          <input 
+                            name="responsibleName"
+                            value={formData.cycles[activeCycleIndex].responsibleName}
+                            onChange={(e) => handleCycleChange(activeCycleIndex, e)}
+                            className="w-full rounded-lg border-slate-200 bg-slate-50 focus:ring-primary focus:border-primary pl-10 pr-4 py-3 font-medium" 
+                            placeholder="Nome do docente..." 
+                            type="text"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-slate-50 rounded-xl border border-slate-100">
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">Data de Início</label>
+                        <input 
+                          name="startDate"
+                          value={formData.cycles[activeCycleIndex].startDate}
+                          onChange={(e) => handleCycleChange(activeCycleIndex, e)}
+                          className="w-full rounded-lg border-slate-200 bg-white focus:ring-primary focus:border-primary px-4 py-3 font-medium" 
+                          type="date"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">Data de Término</label>
+                        <input 
+                          name="endDate"
+                          value={formData.cycles[activeCycleIndex].endDate}
+                          onChange={(e) => handleCycleChange(activeCycleIndex, e)}
+                          className="w-full rounded-lg border-slate-200 bg-white focus:ring-primary focus:border-primary px-4 py-3 font-medium" 
+                          type="date"
+                        />
+                      </div>
+                    </div>
+
+                    {formData.cycles.length > 1 && (
+                      <div className="flex justify-end">
+                        <button 
+                          type="button"
+                          onClick={() => removeCycle(activeCycleIndex)}
+                          className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Remover este ciclo
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </section>
 
               {/* Action Buttons */}
@@ -475,7 +510,7 @@ export default function EditCoursePage() {
                   ) : (
                     <Save className="w-5 h-5" />
                   )}
-                  Atualizar Curso e Oferta
+                  Atualizar Curso e Ciclos
                 </button>
               </div>
             </form>

@@ -54,16 +54,16 @@ export default function NewEnrollmentPage() {
   const handleCourseChange = async (courseId: string) => {
     setFormData(prev => ({ ...prev, courseId, offerId: '' }));
     try {
-      // In a real app, we'd have an API for offers. 
-      // For now, let's assume the course details API returns offers or we just use the courseId to find offers.
       const response = await fetch(`/api/courses/${courseId}`);
       if (response.ok) {
         const data = await response.json();
-        // The course details API returns the latest offer.
-        // Let's mock a list of offers if it doesn't return an array.
-        setOffers(data.offer ? [data.offer] : []);
-        if (data.offer) {
-          setFormData(prev => ({ ...prev, offerId: data.offer.id }));
+        // The course details API now returns an array of offers.
+        const courseOffers = data.offers || [];
+        setOffers(courseOffers);
+        
+        // Auto-select the first offer if available
+        if (courseOffers.length > 0) {
+          setFormData(prev => ({ ...prev, offerId: courseOffers[0].id }));
         }
       }
     } catch (error) {

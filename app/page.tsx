@@ -1,444 +1,254 @@
 'use client';
 
-import * as React from 'react';
-import { Sidebar, TopBar } from '@/components/layout-components';
+import React, { useEffect, useState } from 'react';
 import { 
   Users, 
   BookOpen, 
-  TrendingUp, 
-  Star,
-  AlertCircle,
-  Clock,
-  ArrowUpRight,
-  Filter,
-  ChevronDown
+  GraduationCap, 
+  ClipboardList, 
+  Settings, 
+  FileUp,
+  Calendar,
+  UserPlus,
+  TrendingUp,
+  Activity
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '@/lib/utils';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  Cell
-} from 'recharts';
+import { motion } from 'motion/react';
+import Link from 'next/link';
+
+const modules = [
+  {
+    title: 'Alunos',
+    description: 'Gestão de cadastro e prontuário de alunos',
+    icon: Users,
+    href: '/alunos',
+    color: 'bg-blue-500',
+  },
+  {
+    title: 'Cursos',
+    description: 'Configuração de cursos e matrizes curriculares',
+    icon: BookOpen,
+    href: '/cursos',
+    color: 'bg-emerald-500',
+  },
+  {
+    title: 'Matrículas',
+    description: 'Processo de enturmação e matrículas',
+    icon: UserPlus,
+    href: '/matriculas',
+    color: 'bg-violet-500',
+  },
+  {
+    title: 'Ciclos',
+    description: 'Gestão de períodos letivos e semestres',
+    icon: Calendar,
+    href: '/ciclos',
+    color: 'bg-orange-500',
+  },
+  {
+    title: 'Lançamento de Notas',
+    description: 'Registro de avaliações e frequências',
+    icon: GraduationCap,
+    href: '/lancamento-notas',
+    color: 'bg-rose-500',
+  },
+  {
+    title: 'Importação',
+    description: 'Carga de dados via planilhas Excel/CSV',
+    icon: FileUp,
+    href: '/importacao',
+    color: 'bg-amber-500',
+  },
+  {
+    title: 'Relatórios',
+    description: 'Emissão de documentos e estatísticas',
+    icon: ClipboardList,
+    href: '/relatorios',
+    color: 'bg-indigo-500',
+  },
+  {
+    title: 'Configurações',
+    description: 'Parâmetros do sistema e usuários',
+    icon: Settings,
+    href: '/configuracoes',
+    color: 'bg-slate-500',
+  },
+];
 
 export default function DashboardPage() {
-  const [loading, setLoading] = React.useState(true);
-  const [data, setData] = React.useState<any>(null);
-  const [error, setError] = React.useState<string | null>(null);
-  const [mounted, setMounted] = React.useState(false);
-  const [filters, setFilters] = React.useState({
-    programa: 'Todos',
-    ciclo: '2024.1',
-    curso: 'Todos'
-  });
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const fetchDashboardData = React.useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams(filters);
-      const response = await fetch(`/api/dashboard?${params.toString()}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      setData(result);
-    } catch (error: any) {
-      console.error('Failed to fetch dashboard data:', error);
-      setError(error.message || 'Erro ao carregar dados do dashboard');
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+  useEffect(() => {
+    fetch('/api/dashboard')
+      .then(res => res.json())
+      .then(setData)
+      .finally(() => setLoading(false));
+  }, []);
 
-  React.useEffect(() => {
-    setMounted(true);
-    fetchDashboardData();
-  }, [fetchDashboardData]);
-
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+  const stats = data?.stats || {
+    totalStudents: 0,
+    totalCourses: 0,
+    totalCycles: 0,
+    totalEnrollments: 0
   };
 
-  if (!mounted) {
-    return <div className="min-h-screen bg-slate-50" />;
-  }
-
-  if (loading && !data) {
-    return (
-      <div className="flex min-h-screen bg-slate-50">
-        <Sidebar />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </main>
-      </div>
-    );
-  }
-
-  const stats = [
-    { label: 'Total de Alunos', value: data?.stats?.totalStudents || 0, trend: '+12%', icon: Users, color: 'bg-blue-500' },
-    { label: 'Cursos em Andamento', value: data?.stats?.activeEnrollments || 0, trend: 'Ativos', icon: BookOpen, color: 'bg-indigo-500' },
-    { label: 'Taxa de Retenção', value: '87.4%', trend: 'Meta: 85%', icon: TrendingUp, color: 'bg-emerald-500' },
-    { label: 'Desempenho Médio', value: (data?.stats?.avgGrade !== null && data?.stats?.avgGrade !== undefined) ? Number(data.stats.avgGrade).toFixed(1) : '0.0', trend: '+0.4', icon: Star, color: 'bg-amber-500' },
-  ];
-
-  // Map region data calculation
-  const regions = [
-    { name: 'Região Sudeste', states: ['SP', 'RJ', 'MG', 'ES'] },
-    { name: 'Região Nordeste', states: ['BA', 'PE', 'CE', 'RN', 'PB', 'AL', 'SE', 'MA', 'PI'] },
-    { name: 'Região Sul', states: ['PR', 'SC', 'RS'] },
-    { name: 'Região Centro-Oeste', states: ['DF', 'GO', 'MT', 'MS'] },
-    { name: 'Região Norte', states: ['AM', 'PA', 'AC', 'RO', 'RR', 'AP', 'TO'] },
-  ];
-
-  const regionData = regions.map(region => {
-    const count = data?.geoDist?.filter((d: any) => region.states.includes(d.state))
-      .reduce((acc: number, curr: any) => acc + curr.count, 0) || 0;
-    const total = data?.stats?.totalStudents || 1;
-    return {
-      name: region.name,
-      count,
-      percent: Math.round((count / total) * 100)
-    };
-  }).sort((a, b) => b.count - a.count);
-
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar />
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <TopBar 
-          title="Dashboard de Engajamento e Alcance Geográfico" 
-          subtitle="Análise de tecnologias emergentes e distribuição territorial de alunos." 
-        />
-        
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-          <div className="max-w-7xl mx-auto space-y-8">
+    <main className="min-h-screen p-8 max-w-7xl mx-auto">
+      <header className="mb-12 flex justify-between items-end">
+        <div>
+          <motion.h1 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-4xl font-black tracking-tight text-slate-900 mb-2"
+          >
+            Sistema de Gestão Escolar
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-slate-500 text-lg font-medium"
+          >
+            Bem-vindo ao painel de controle acadêmico.
+          </motion.p>
+        </div>
+        <div className="hidden md:flex items-center gap-4 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl">
+            <Activity size={18} />
+            <span className="text-xs font-black uppercase tracking-widest">Sistema Online</span>
+          </div>
+        </div>
+      </header>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {modules.map((module, index) => (
+          <motion.div
+            key={module.title}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: index * 0.05 }}
+          >
+            <Link
+              href={module.href}
+              className="group relative block p-6 bg-white rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:shadow-slate-200/50 transition-all hover:-translate-y-1 hover:border-primary/20 overflow-hidden"
+            >
+              <div className={`inline-flex p-3 rounded-2xl ${module.color} text-white mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-current/20`}>
+                <module.icon size={24} />
+              </div>
+              <h3 className="text-lg font-black text-slate-900 mb-1 tracking-tight">
+                {module.title}
+              </h3>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                {module.description}
+              </p>
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 text-slate-900 transition-opacity">
+                 <module.icon size={80} />
+              </div>
+            </Link>
+          </motion.div>
+        ))}
+      </div>
+
+      <section className="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-xl font-black flex items-center gap-2 tracking-tight">
+              <TrendingUp className="text-blue-500" />
+              Ciclos Recentes
+            </h2>
+            <Link href="/ciclos" className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">
+              Ver Todos
+            </Link>
+          </div>
+          
+          <div className="space-y-4">
+            {loading ? (
+              [...Array(3)].map((_, i) => (
+                <div key={i} className="h-20 bg-slate-50 animate-pulse rounded-2xl" />
+              ))
+            ) : data?.recentCycles?.length > 0 ? (
+              data.recentCycles.map((item: any, i: number) => (
+                <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-colors group">
+                  <div className="text-center min-w-[60px] p-2 bg-white rounded-xl shadow-sm border border-slate-100">
+                    <span className="block text-[10px] font-black uppercase text-slate-400">{item.ano}</span>
+                    <span className="text-lg font-black text-slate-900">{item.semestre}º S</span>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-slate-900">{item.nome_ciclo}</h4>
+                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{item.nome_curso}</span>
+                  </div>
+                  <div className="px-3 py-1 rounded-full bg-white border border-slate-200 text-[10px] font-black uppercase text-slate-500">
+                    {item.status}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-12 text-slate-400 italic text-sm">
+                Nenhum ciclo recente encontrado.
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-slate-900 text-white p-8 rounded-[2rem] shadow-2xl shadow-slate-900/20 flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl rounded-full -mr-16 -mt-16" />
+          
+          <div className="relative z-10">
+            <h2 className="text-xl font-black mb-2 tracking-tight">Resumo Rápido</h2>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-8">Dados consolidados</p>
             
-            {/* Filters Header */}
-            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
-              <div className="flex items-center gap-3 w-full xl:w-auto">
-                <div className="flex flex-wrap gap-2 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm flex-1 xl:flex-none">
-                  <div className="relative">
-                    <select 
-                      value={filters.programa}
-                      onChange={(e) => handleFilterChange('programa', e.target.value)}
-                      className="text-sm border-none bg-transparent rounded-lg focus:ring-0 cursor-pointer min-w-[140px] appearance-none pr-8 py-1.5 font-medium text-slate-700"
-                    >
-                      <option value="Todos">Programa: Todos</option>
-                      {data?.filterOptions?.programs.map((p: string) => (
-                        <option key={p} value={p}>{p}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  </div>
-                  <div className="hidden sm:block w-px h-6 bg-slate-200 self-center"></div>
-                  <div className="relative">
-                    <select 
-                      value={filters.ciclo}
-                      onChange={(e) => handleFilterChange('ciclo', e.target.value)}
-                      className="text-sm border-none bg-transparent rounded-lg focus:ring-0 cursor-pointer min-w-[140px] appearance-none pr-8 py-1.5 font-medium text-slate-700"
-                    >
-                      <option value="Todos">Ciclo: Todos</option>
-                      {data?.filterOptions?.cycles.map((c: string) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  </div>
-                  <div className="hidden sm:block w-px h-6 bg-slate-200 self-center"></div>
-                  <div className="relative">
-                    <select 
-                      value={filters.curso}
-                      onChange={(e) => handleFilterChange('curso', e.target.value)}
-                      className="text-sm border-none bg-transparent rounded-lg focus:ring-0 cursor-pointer min-w-[160px] appearance-none pr-8 py-1.5 font-medium text-slate-700"
-                    >
-                      <option value="Todos">Curso: Todos</option>
-                      {data?.filterOptions?.courses.map((c: string) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  </div>
+            <div className="space-y-8">
+              <div>
+                <div className="flex justify-between text-xs font-black uppercase tracking-widest mb-3">
+                  <span className="text-slate-400">Alunos Ativos</span>
+                  <span className="text-white">{stats.totalStudents}</span>
                 </div>
-                <button className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 shadow-sm transition-colors">
-                  <Filter className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {stats.map((stat, i) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group"
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <div className={cn(stat.color, "p-2.5 rounded-xl text-white shadow-lg shadow-current/20 group-hover:scale-110 transition-transform")}>
-                      <stat.icon className="w-5 h-5" />
-                    </div>
-                    <span className={cn(
-                      "text-[10px] font-black px-2 py-1 rounded-full border uppercase tracking-widest",
-                      stat.trend.includes('+') ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-500 border-slate-100"
-                    )}>
-                      {stat.trend}
-                    </span>
-                  </div>
-                  <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{stat.label}</p>
-                  <h3 className="text-2xl font-black text-slate-900 mt-1">
-                    {stat.label === 'Desempenho Médio' ? `${stat.value}/10` : stat.value}
-                  </h3>
-                </motion.div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Engagement Chart */}
-              <div className="lg:col-span-8 space-y-8">
-                <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
-                  <div className="flex justify-between items-center mb-8">
-                    <div>
-                      <h4 className="font-black text-lg text-slate-900 tracking-tight">Taxa de Engajamento por Tecnologia</h4>
-                      <p className="text-xs text-slate-500">Volume de alunos capacitados por trilha tecnológica</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-sm bg-accent" />
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Alunos Capacitados</span>
-                    </div>
-                  </div>
-                  
-                  <div className="h-80 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        layout="vertical"
-                        data={data?.engagementByTech || []}
-                        margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
-                        <XAxis type="number" hide />
-                        <YAxis 
-                          dataKey="tech" 
-                          type="category" 
-                          axisLine={false} 
-                          tickLine={false} 
-                          tick={{ fontSize: 11, fontWeight: 700, fill: '#64748b' }}
-                          width={120}
-                        />
-                        <Tooltip 
-                          cursor={{ fill: '#f8fafc' }}
-                          contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                        />
-                        <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={20}>
-                          {data?.engagementByTech?.map((entry: any, index: number) => (
-                            <Cell key={`cell-${index}`} fill="#137fec" />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                {/* Geographic Distribution */}
-                <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
-                  <div className="flex justify-between items-center mb-8">
-                    <div>
-                      <h4 className="font-black text-lg text-slate-900 tracking-tight">Distribuição Geográfica de Alunos</h4>
-                      <p className="text-xs text-slate-500">Densidade de matrículas por região (Mapa de Calor)</p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                        <span>Baixa</span>
-                        <div className="flex h-2 w-20 bg-gradient-to-r from-blue-100 via-blue-500 to-blue-900 rounded-sm mx-1"></div>
-                        <span>Alta</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-center">
-                    <div className="md:col-span-7 relative aspect-[4/3] bg-slate-50 rounded-3xl overflow-hidden border border-slate-100 flex items-center justify-center p-6">
-                      {/* Simplified Brazil SVG Map with Heat Circles */}
-                      <svg viewBox="0 0 500 500" className="w-full h-full opacity-20 grayscale">
-                        <path d="M150,50 L350,50 L450,150 L450,350 L350,450 L150,450 L50,350 L50,150 Z" fill="#cbd5e1" />
-                      </svg>
-                      
-                      {/* Heat Circles based on data */}
-                      <AnimatePresence>
-                        {data?.geoDist?.map((point: any, i: number) => {
-                          // Mock coordinates for states for visualization
-                          const coords: any = {
-                            'SP': { t: '70%', l: '65%' },
-                            'RJ': { t: '75%', l: '72%' },
-                            'MG': { t: '60%', l: '68%' },
-                            'BA': { t: '45%', l: '78%' },
-                            'PE': { t: '38%', l: '82%' },
-                            'CE': { t: '30%', l: '78%' },
-                            'AM': { t: '30%', l: '30%' },
-                            'PR': { t: '80%', l: '58%' },
-                            'RS': { t: '90%', l: '55%' },
-                            'PA': { t: '35%', l: '50%' },
-                          };
-                          const pos = coords[point.state] || { t: '50%', l: '50%' };
-                          const size = Math.min(60, 20 + (point.count * 5));
-                          const opacity = Math.min(0.6, 0.2 + (point.count / 10));
-                          
-                          return (
-                            <motion.div
-                              key={point.city + i}
-                              initial={{ scale: 0, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              className="absolute rounded-full bg-blue-600 blur-xl pointer-events-none"
-                              style={{ 
-                                top: pos.t, 
-                                left: pos.l, 
-                                width: size, 
-                                height: size,
-                                opacity: opacity
-                              }}
-                            />
-                          );
-                        })}
-                      </AnimatePresence>
-                      
-                      {/* State Labels */}
-                      {['SP', 'RJ', 'MG', 'BA', 'AM', 'PE', 'CE'].map(state => {
-                        const coords: any = {
-                          'SP': { t: '72%', l: '67%' },
-                          'RJ': { t: '77%', l: '74%' },
-                          'MG': { t: '62%', l: '70%' },
-                          'BA': { t: '47%', l: '80%' },
-                          'AM': { t: '32%', l: '32%' },
-                          'PE': { t: '40%', l: '84%' },
-                          'CE': { t: '32%', l: '80%' },
-                        };
-                        const pos = coords[state];
-                        return (
-                          <div key={state} className="absolute text-[10px] font-black text-slate-600" style={{ top: pos.t, left: pos.l }}>
-                            {state}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <div className="md:col-span-5 space-y-4">
-                      {regionData.map((region, i) => (
-                        <div key={region.name} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-white hover:shadow-md transition-all">
-                          <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{region.name}</p>
-                          <div className="flex items-end gap-2 mt-1">
-                            <p className="text-2xl font-black text-slate-900">{region.percent}%</p>
-                            <p className="text-[10px] text-slate-400 font-bold mb-1">({region.count} alunos)</p>
-                          </div>
-                          <div className="w-full h-1 bg-slate-200 rounded-full mt-3 overflow-hidden">
-                            <motion.div 
-                              initial={{ width: 0 }}
-                              animate={{ width: `${region.percent}%` }}
-                              className="h-full bg-accent rounded-full"
-                            />
-                          </div>
-                        </div>
-                      ))}
-                      <button className="w-full text-center text-[10px] font-black text-accent uppercase tracking-widest hover:underline mt-4">
-                        Detalhamento por Cidade →
-                      </button>
-                    </div>
-                  </div>
+                <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: '85%' }}
+                    className="h-full bg-blue-500" 
+                  />
                 </div>
               </div>
-
-              {/* Sidebar Content */}
-              <div className="lg:col-span-4 space-y-8">
-                <div className="bg-white p-8 rounded-3xl border border-rose-100 shadow-sm ring-1 ring-rose-50/50">
-                  <div className="flex items-center gap-3 mb-8 text-rose-600">
-                    <div className="p-2 bg-rose-50 rounded-xl">
-                      <AlertCircle className="w-5 h-5" />
-                    </div>
-                    <h4 className="font-black text-lg tracking-tight">Alertas de Desempenho</h4>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    {data?.alerts?.map((alert: any, i: number) => (
-                      <div key={i} className="p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md transition-all group">
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="text-sm font-black text-slate-900">{alert.name}</span>
-                          <span className={cn(
-                            "text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-widest",
-                            (alert.grade !== null && alert.grade < 5) ? "bg-rose-50 text-rose-600 border-rose-100" : "bg-amber-50 text-amber-600 border-amber-100"
-                          )}>
-                            {(alert.grade !== null && alert.grade < 5) ? `Nota: ${Number(alert.grade).toFixed(1)}` : `Freq: ${alert.frequency || 0}%`}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 font-medium mb-4">{alert.course}</p>
-                        <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                          <div 
-                            className={cn("h-full transition-all duration-1000", (alert.grade !== null && alert.grade < 5) ? "bg-rose-500" : "bg-amber-500")} 
-                            style={{ width: `${(alert.grade !== null && alert.grade < 5) ? (alert.grade/10)*100 : (alert.frequency || 0)}%` }} 
-                          />
-                        </div>
-                      </div>
-                    ))}
-                    {(!data?.alerts || data.alerts.length === 0) && (
-                      <div className="text-center py-10">
-                        <p className="text-sm text-slate-400 font-medium">Nenhum alerta crítico no momento.</p>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <button className="w-full mt-8 py-4 text-[10px] font-black text-rose-600 border-2 border-rose-100 rounded-2xl hover:bg-rose-50 transition-all uppercase tracking-widest">
-                    Ver Todos os Alertas
-                  </button>
+              <div>
+                <div className="flex justify-between text-xs font-black uppercase tracking-widest mb-3">
+                  <span className="text-slate-400">Cursos Ativos</span>
+                  <span className="text-white">{stats.totalCourses}</span>
                 </div>
-
-                <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
-                  <div className="flex justify-between items-center mb-8">
-                    <h4 className="font-black text-lg text-slate-900 tracking-tight">Atividade Recente</h4>
-                    <button className="text-[10px] text-accent font-black uppercase tracking-widest hover:underline">Ver Tudo</button>
-                  </div>
-                  
-                  <div className="space-y-8">
-                    {data?.recentActivity?.map((act: any, i: number) => (
-                      <div key={i} className="flex gap-4 group">
-                        <div className="relative shrink-0">
-                          <div 
-                            className="size-12 rounded-2xl bg-slate-100 bg-cover bg-center border-2 border-white shadow-sm group-hover:scale-105 transition-transform" 
-                            style={{ backgroundImage: `url('${act.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(act.user || 'User')}`}')` }} 
-                          />
-                          <div className="absolute -bottom-1 -right-1 size-5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
-                            <ArrowUpRight className="w-3 h-3 text-white" />
-                          </div>
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-black text-slate-900 truncate">{act.user}</p>
-                          <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
-                            {act.action} <span className="text-slate-900 font-bold">{act.target}</span>
-                          </p>
-                          <div className="flex items-center gap-1 mt-2 text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
-                            <Clock className="w-3 h-3" />
-                            <span>{new Date(act.time).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {(!data?.recentActivity || data.recentActivity.length === 0) && (
-                      <div className="text-center py-10">
-                        <p className="text-sm text-slate-400 font-medium">Nenhuma atividade recente encontrada.</p>
-                      </div>
-                    )}
-                  </div>
+                <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: '62%' }}
+                    className="h-full bg-emerald-500" 
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-xs font-black uppercase tracking-widest mb-3">
+                  <span className="text-slate-400">Matrículas</span>
+                  <span className="text-white">{stats.totalEnrollments}</span>
+                </div>
+                <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: '45%' }}
+                    className="h-full bg-violet-500" 
+                  />
                 </div>
               </div>
             </div>
           </div>
+          
+          <Link 
+            href="/relatorios"
+            className="mt-12 w-full py-4 bg-white text-slate-900 rounded-2xl font-black text-sm hover:bg-slate-100 transition-all text-center shadow-xl shadow-white/10 active:scale-95"
+          >
+            VER RELATÓRIO COMPLETO
+          </Link>
         </div>
-      </main>
-    </div>
+      </section>
+    </main>
   );
 }

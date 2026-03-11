@@ -21,6 +21,7 @@ import {
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { Logo } from './Logo';
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -64,14 +65,8 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 bg-white text-slate-900 h-screen sticky top-0 flex flex-col border-r border-slate-200">
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-sm">
-          <GraduationCap className="w-6 h-6" />
-        </div>
-        <div>
-          <h1 className="font-bold text-lg leading-tight tracking-tight text-slate-900">Gestão Acadêmica</h1>
-          <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Cursos de Extensão</p>
-        </div>
+      <div className="p-6">
+        <Logo />
       </div>
 
       <nav className="flex-1 px-4 py-4 space-y-1">

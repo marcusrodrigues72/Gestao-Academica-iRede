@@ -30,6 +30,7 @@ interface Course {
   duration: string;
   status: string;
   image: string;
+  cycleCount: number;
 }
 
 export default function CoursesPage() {
@@ -202,7 +203,7 @@ export default function CoursesPage() {
                       <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                         <div className="flex items-center gap-2 text-slate-400">
                           <Clock className="w-4 h-4" />
-                          <span className="text-xs font-medium">{course.duration}</span>
+                          <span className="text-xs font-medium">{course.cycleCount} {course.cycleCount === 1 ? 'Ciclo' : 'Ciclos'}</span>
                         </div>
                         <span className={cn(
                           "px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border",

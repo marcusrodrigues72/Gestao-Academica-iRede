@@ -2,8 +2,9 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { GraduationCap, Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
+import { Logo } from '@/components/Logo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,7 +22,6 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    console.log('Login attempt started for:', email);
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -30,30 +30,17 @@ export default function LoginPage() {
         body: JSON.stringify({ email, senha }),
       });
 
-      console.log('Login response status:', response.status);
-
       if (response.ok) {
         const data = await response.json();
-        console.log('Login successful, setting up session...');
-        
-        // Determine landing page based on role
         const role = data.user?.role;
         const landingPage = (role === 'professor' || role === 'mentor') ? '/lancamento-notas' : '/';
-        
-        try {
-          router.push(landingPage);
-          router.refresh();
-        } catch (navError) {
-          console.error('Navigation error:', navError);
-          window.location.href = landingPage;
-        }
+        router.push(landingPage);
+        router.refresh();
       } else {
         const data = await response.json();
-        console.error('Login failed:', data.error);
         setError(data.error || 'Falha na autenticação');
       }
     } catch (err) {
-      console.error('Login connection error:', err);
       setError('Erro de conexão. Tente novamente.');
     } finally {
       setLoading(false);
@@ -71,11 +58,8 @@ export default function LoginPage() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-md w-full"
       >
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl text-white shadow-xl shadow-primary/20 mb-6">
-            <GraduationCap className="w-10 h-10" />
-          </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Gestão Acadêmica</h1>
+        <div className="text-center mb-10 flex flex-col items-center">
+          <Logo className="mb-6 scale-125" />
           <p className="text-slate-500 mt-2 font-medium">Faça login para acessar o portal</p>
         </div>
 
@@ -90,7 +74,7 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">E-mail</label>
-              <div className="relative" suppressHydrationWarning>
+              <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input 
                   type="email" 
@@ -105,7 +89,7 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Senha</label>
-              <div className="relative" suppressHydrationWarning>
+              <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input 
                   type="password" 

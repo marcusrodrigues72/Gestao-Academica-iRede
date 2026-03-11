@@ -16,7 +16,8 @@ export async function GET() {
       4.8 as rating, -- Mock rating as it's not in DB
       '120h' as duration, -- Mock duration as it's not in DB
       'Ativo' as status,
-      'https://picsum.photos/seed/' || c.curso_id || '/800/600' as image
+      'https://picsum.photos/seed/' || c.curso_id || '/800/600' as image,
+      (SELECT COUNT(*) FROM oferta_turma ot WHERE ot.curso_id = c.curso_id) as cycleCount
     FROM curso c
   `).all();
   
@@ -45,25 +46,52 @@ export async function POST(request: Request) {
       data.description || null
     );
 
-    // 2. Insert Oferta
-    db.prepare(`
-      INSERT INTO oferta_turma (
-        oferta_id, curso_id, codigo_oferta_externo, ciclo_edicao, ano, semestre, turma, trilha, responsavel_tipo, responsavel_nome, data_inicio, data_fim
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      ofertaId,
-      cursoId,
-      data.offerExternalId || null,
-      data.cycle || null,
-      data.year ? parseInt(data.year) : new Date().getFullYear(),
-      data.semester ? parseInt(data.semester) : 1,
-      data.class || null,
-      data.track || null,
-      data.responsibleType || 'Professor',
-      data.responsibleName || null,
-      data.startDate || null,
-      data.endDate || null
-    );
+    // 2. Insert Ofertas (Cycles)
+    if (data.cycles && Array.isArray(data.cycles)) {
+      const insertOferta = db.prepare(`
+        INSERT INTO oferta_turma (
+          oferta_id, curso_id, codigo_oferta_externo, ciclo_edicao, ano, semestre, turma, trilha, responsavel_tipo, responsavel_nome, data_inicio, data_fim
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      data.cycles.forEach((cycle: any) => {
+        insertOferta.run(
+          uuidv4(),
+          cursoId,
+          cycle.externalId || null,
+          cycle.cycle || null,
+          cycle.year ? parseInt(cycle.year) : new Date().getFullYear(),
+          cycle.semester ? parseInt(cycle.semester) : 1,
+          cycle.class || null,
+          cycle.track || null,
+          cycle.responsibleType || 'Professor',
+          cycle.responsibleName || null,
+          cycle.startDate || null,
+          cycle.endDate || null
+        );
+      });
+    } else {
+      // Fallback for single offer if cycles array not provided
+      const ofertaId = uuidv4();
+      db.prepare(`
+        INSERT INTO oferta_turma (
+          oferta_id, curso_id, codigo_oferta_externo, ciclo_edicao, ano, semestre, turma, trilha, responsavel_tipo, responsavel_nome, data_inicio, data_fim
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        ofertaId,
+        cursoId,
+        data.offerExternalId || null,
+        data.cycle || null,
+        data.year ? parseInt(data.year) : new Date().getFullYear(),
+        data.semester ? parseInt(data.semester) : 1,
+        data.class || null,
+        data.track || null,
+        data.responsibleType || 'Professor',
+        data.responsibleName || null,
+        data.startDate || null,
+        data.endDate || null
+      );
+    }
     // 3. Insert Modules
     if (data.modules && Array.isArray(data.modules)) {
       const insertModule = db.prepare(`
